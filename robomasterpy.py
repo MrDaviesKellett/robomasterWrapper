@@ -4,6 +4,8 @@ from robomaster import led
 from random import randint
 from typing import overload
 
+import robomaster.action
+
 
 class RoboMaster:
 
@@ -36,50 +38,135 @@ class RoboMaster:
             case _:
                 connection = "sta"
         self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
-        self.ep_led = self.robot.led
+        self.battery = self.robot.battery
+        self.blaster = self.robot.blaster
+        self.camera = self.robot.camera
+        self.chassis = self.robot.chassis
+        self.gimbal = self.robot.gimbal
+        self.led = self.robot.led
+        self.robotic_arm = self.robot.robotic_arm
+        self.vision = self.robot.vision
+        self.mode = "free"
 
     def __repr__(self) -> str:
+        """
+        Returns the RoboMaster's serial number.
+        Returns:
+        str: Serial number of the RoboMaster device.
+        """
         return f"RoboMaster {self.robot.get_sn()}"
+
+    def getModule(self, module: str) -> object:
+        """
+        Get a module from the RoboMaster SDK.
+        Args:
+        module (str): Module name.
+        Returns:
+        object: The module.
+        """
+        match module.lower():
+            case "battery":
+                return self.battery
+            case "blaster":
+                return self.blaster
+            case "camera":
+                return self.camera
+            case "chassis":
+                return self.chassis
+            case "gimbal":
+                return self.gimbal
+            case "led":
+                return self.led
+            case "robotic_arm":
+                return self.robotic_arm
+            case "vision":
+                return self.vision
+            case _:
+                raise ValueError(f"Invalid module name {module}")
 
     def setRobotMode(self, mode: str = "free"):
         """
         Set the robot mode.
         Args:
-            mode (str, optional): Robot mode. free, chassis, gimbal. Defaults to "free".
+        mode (str, optional): Robot mode. free, chassis, gimbal. Defaults to "free".
         """
         match mode.lower():
             case "free":
+                self.mode = "free"
                 md = "sta"
             case "chassis":
+                self.mode = "chassis"
                 md = robot.CHASSIS_LEAD
             case "gimbal":
+                self.mode = "gimbal"
                 md = robot.GIMBAL_LEAD
             case _:
+                self.mode = "gimbal"
                 md = robot.GIMBAL_LEAD
         self.robot.set_robot_mode(md)
 
+    def getRobotMode(self) -> str:
+        """
+        Get the robot mode.
+        Returns:
+        str: Robot mode. free, chassis, gimbal.
+        """
+        return self.mode
+
+    def getSN(self) -> str:
+        """
+        Get the serial number of the RoboMaster device.
+        Returns:
+        str: The serial number.
+        """
+        return self.robot.get_sn()
+
+    def getVersion(self) -> str:
+        """
+        Get the version of the RoboMaster device.
+        Returns:
+        str: The version.
+        """
+        return self.robot.get_version()
+
+    def reset(self) -> None:
+        """
+        Reset the RoboMaster device.
+        """
+        self.robot.reset()
+        print("Resetting...")
+
+    # Audio
+
+    def playAudio(
+        self, path: str, blocking: bool = False, timeout=None
+    ) -> robomaster.action.Action:
+        """
+        Play an audio file.
+        Args:
+        path (str): Path to the audio file.
+        """
+        if not blocking:
+            return self.robot.play_audio(path)
+        else:
+            return self.robot.play_audio(path).wait_for_completed(timeout)
+        print(f"Playing audio: {path}")
+
+    def playSound(
+        self, soundID: int, blocking: bool = False, timeout=None
+    ) -> robomaster.action.Action:
+        """
+        Play a sound.
+        Args:
+        sound (str): Sound name.
+        """
+        if not blocking:
+            return self.robot.play_sound(soundID)
+        else:
+            return self.robot.play_sound(soundID).wait_for_completed(timeout)
+        print(f"Playing sound: {sound}")
+
     # LEDs
-
-    """
-    COMP_TOP_LEFT = 'top_left'
-    COMP_TOP_RIGHT = 'top_right'
-    COMP_BOTTOM_LEFT = 'bottom_left'
-    COMP_BOTTOM_RIGHT = 'bottom_right'
-    COMP_BOTTOM_FRONT = 'bottom_front'
-    COMP_BOTTOM_BACK = 'bottom_back'
-    COMP_BOTTOM_ALL = 'bottom_all'
-    COMP_TOP_ALL = 'top_all'
-    COMP_ALL = 'all'
-    """
-
-    """
-    EFFECT_ON = 'on'
-    EFFECT_OFF = 'off'
-    EFFECT_PULSE = 'pulse'
-    EFFECT_FLASH = 'flash'
-    EFFECT_BREATH = 'breath'
-    EFFECT_SCROLLING = 'scrolling'
-    """
 
     @overload
     def setLEDs(self, r: int, g: int, b: int):
@@ -177,7 +264,7 @@ class RoboMaster:
                 case "scrolling":
                     effect = led.EFFECT_SCROLLING
 
-        self.ep_led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
+        self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
     def move(self, speed=100, radius=50, direction="forward"):
         if direction == "forward":
