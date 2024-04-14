@@ -381,14 +381,14 @@ class RoboMaster:
         blocking: bool = False,
     ) -> robomaster.action.Action:
         """
-        -Move the chassis a set distance in meters from its current position.
-        -Positive values in X move forward, negative values move backward.
-        -Positive values in Y move left, negative values move right.
-        -Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        -Turning speed is in degrees/second (°/s). Default turning speed is 30°/s.
-        -Maximum move distance is 5 meters.
-        -Speed must be within the range of 0.5 and 2.0 m/s.
-        -Turning speed must be within the range of 10 and 540°/s.
+        Move the chassis a set distance in meters from its current position.
+        Positive values in X move forward, negative values move backward.
+        Positive values in Y move left, negative values move right.
+        Speed is in meters/second (m/s). default speed is 0.5 m/s.
+        Turning speed is in degrees/second (°/s). Default turning speed is 30°/s.
+        Maximum move distance is 5 meters.
+        Speed must be within the range of 0.5 and 2.0 m/s.
+        Turning speed must be within the range of 10 and 540°/s.
         Args:
         xDistance (float): Distance to move in the x direction (meters). Defaults to 0.0.
         yDistance (float): Distance to move in the y direction (meters). Defaults to 0.0.
@@ -405,4 +405,35 @@ class RoboMaster:
         else:
             return self.robot.chassis.move(
                 x=xDistance, y=yDistance, z=speed, xy_speed=speed, z_speed=turnSpeed
+            ).wait_for_completed()
+
+    def forward(
+        self,
+        distance: float = 0.5,
+        speed: float = 0.5,
+        turnSpeed: float = 30,
+        blocking: bool = False,
+    ) -> robomaster.action.Action:
+        """
+        Move the chassis a set distance in meters from its current position.
+        Positive values move forward, negative values move backward.
+        Speed is in meters/second (m/s). default speed is 0.5 m/s.
+        Turning speed is in degrees/second (°/s). Default turning speed is 30°/s.
+        Maximum move distance is 5 meters.
+        Speed must be within the range of 0.5 and 2.0 m/s.
+        Args:
+        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
+        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
+        turnspeed (float): Turning speed of the chassis (°/s). Defaults to 30°/s.
+        blocking (bool): Block until action is complete. Defaults to False.
+        Returns:
+        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        """
+        if not blocking:
+            return self.robot.chassis.move(
+                x=distance, xy_speed=speed, z_speed=turnSpeed
+            )
+        else:
+            return self.robot.chassis.move(
+                x=distance, xy_speed=speed
             ).wait_for_completed()
