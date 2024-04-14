@@ -3,6 +3,7 @@ from robomaster import robot
 from robomaster import led
 from random import randint
 from typing import overload
+from helperFuncs import clamp
 
 import robomaster.action
 
@@ -266,28 +267,142 @@ class RoboMaster:
 
         self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
-    def move(self, speed=100, radius=50, direction="forward"):
-        if direction == "forward":
-            self.robot.drive_direct(speed, 0)
-        elif direction == "backward":
-            self.robot.drive_direct(-speed, 0)
-        elif direction == "left":
-            self.robot.drive_direct(0, speed)
-        elif direction == "right":
-            self.robot.drive_direct(0, -speed)
+    # Chassis
+
+    def setSpeed(
+        self, x: float = 0.0, y: float = 0.0, z: float = 0.0, timeout: int | None = None
+    ) -> None:
+        """
+        Set the chassis speed in m/s - max speed 3.5m/s.
+        Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
+        Positive values move forward, negative values move backward.
+        Positive degrees turn left, negative degrees turn right.
+        Args:
+        x (float): Speed in x axis (m/s). Defaults to 0.0.
+        y (float): Speed in y axis (m/s). Defaults to 0.0.
+        z (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
+        timeout (int): Timeout for the action. Defaults to None.
+        """
+        if -3.5 > x > 3.5:
+            print("X speed is out of range.")
+            print("X requires a value between -3.5 and 3.5")
+            print("Limiting X to +-3.5")
+            x = clamp(x, -3.5, 3.5)
+        if -3.5 > y > 3.5:
+            print("Y speed is out of range.")
+            print("Y requires a value between -3.5 and 3.5")
+            print("Limiting Y to +-3.5")
+            y = clamp(y, -3.5, 3.5)
+        if -600 > z > 600:
+            print("Z speed is out of range.")
+            print("Z requires a value between -600 and 600")
+            print("Limiting Z to +-600")
+            z = clamp(z, -600, 600)
+
+        self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
+
+    def rotate(self, angle: float = 0.0, timeout: int | None = None) -> None:
+        """
+        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
+        Positive degrees turn left, negative degrees turn right.
+        Args:
+        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
+        timeout (int): Timeout for the action. Defaults to None.
+        """
+        if -600 > angle > 600:
+            print("Angle is out of range.")
+            print("Angle requires a value between -600 and 600")
+            print("Limiting Angle to +-600")
+            angle = clamp(angle, -600, 600)
+        self.robot.chassis.drive_speed(z=angle, timeout=timeout)
+
+    def turn(self, angle: float = 0.0, timeout: int | None = None) -> None:
+        """
+        Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
+        Positive degrees turn left, negative degrees turn right.
+        Args:
+        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
+        timeout (int): Timeout for the action. Defaults to None.
+        """
+        self.rotate(angle=angle, timeout=timeout)
+
+    def setWheelRPMs(
+        self,
+        frontRight: int = 0,
+        frontLeft: int = 0,
+        backRight: int = 0,
+        backLeft: int = 0,
+        timeout: int | None = None,
+    ) -> None:
+        """
+        Set the chassis wheels in Revolutions Per Minute (RPMs).
+        Maximum speed is 1000 RPMs (16.6 rotations/s) (approx 3.5m/s).
+        Positive values rotate the wheels clockwise, negative values counterclockwise.
+        Therefore positive values move forward, negative values move backward.
+        Combinations of positive and negative values are possible, this will result in the chassis turning.
+        Args:
+        frontRight (int): Speed of the front right wheel (RPMs). Defaults to 0.
+        frontLeft (int): Speed of the front right wheel (RPMs). Defaults to 0.
+        backRight (int): Speed of the back right wheel (RPMs). Defaults to 0.
+        backLeft (int): Speed of the back left wheel (RPMs). Defaults to 0.
+        timeout (int): Timeout for the action (seconds). Defaults to None.
+        """
+        if -1000 > frontRight > 1000:
+            print("Front right wheel speed is out of range.")
+            print("Front right wheel requires a value between -1000 and 1000")
+            print("Limiting Front right wheel to +-1000")
+            frontRight = clamp(frontRight, -1000, 1000)
+        if -1000 > frontLeft > 1000:
+            print("Front left wheel speed is out of range.")
+            print("Front left wheel requires a value between -1000 and 1000")
+            print("Limiting Front left wheel to +-1000")
+            frontLeft = clamp(frontLeft, -1000, 1000)
+        if -1000 > backRight > 1000:
+            print("Back right wheel speed is out of range.")
+            print("Back right wheel requires a value between -1000 and 1000")
+            print("Limiting Back right wheel to +-1000")
+            backRight = clamp(backRight, -1000, 1000)
+        if -1000 > backLeft > 1000:
+            print("Back left wheel speed is out of range.")
+            print("Back left wheel requires a value between -1000 and 1000")
+            print("Limiting Back left wheel to +-1000")
+            backLeft = clamp(backLeft, -1000, 1000)
+
+        self.robot.chassis.drive_wheels(
+            w1=frontRight, w2=frontLeft, w3=backRight, w4=backLeft, timeout=timeout
+        )
+
+    def move(
+        self,
+        xDistance: float = 0.0,
+        yDistance: float = 0.0,
+        speed: float = 0.5,
+        turnSpeed: float = 30,
+        blocking: bool = False,
+    ) -> robomaster.action.Action:
+        """
+        -Move the chassis a set distance in meters from its current position.
+        -Positive values in X move forward, negative values move backward.
+        -Positive values in Y move left, negative values move right.
+        -Speed is in meters/second (m/s). default speed is 0.5 m/s.
+        -Turning speed is in degrees/second (°/s). Default turning speed is 30°/s.
+        -Maximum move distance is 5 meters.
+        -Speed must be within the range of 0.5 and 2.0 m/s.
+        -Turning speed must be within the range of 10 and 540°/s.
+        Args:
+        xDistance (float): Distance to move in the x direction (meters). Defaults to 0.0.
+        yDistance (float): Distance to move in the y direction (meters). Defaults to 0.0.
+        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
+        turnSpeed (float): Turning speed of the chassis (°/s). Defaults to 30°/s.
+        blocking (bool): Block until action is complete. Defaults to False.
+        Returns:
+        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        """
+        if not blocking:
+            return self.robot.chassis.move(
+                x=xDistance, y=yDistance, z=speed, xy_speed=speed, z_speed=turnSpeed
+            )
         else:
-            print("Invalid direction")
-
-    def turn(self, speed=100, radius=50, direction="left"):
-        if direction == "left":
-            self.robot.drive_direct(-speed, 0)
-        elif direction == "right":
-            self.robot.drive_direct(speed, 0)
-        else:
-            print("Invalid direction")
-
-    def stop(self):
-        self.robot.stop()
-
-    def shoot(self):
-        self.robot.shoot()
+            return self.robot.chassis.move(
+                x=xDistance, y=yDistance, z=speed, xy_speed=speed, z_speed=turnSpeed
+            ).wait_for_completed()
