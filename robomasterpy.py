@@ -315,6 +315,26 @@ class RoboMaster:
             print("Limiting Angle to +-600")
             angle = clamp(angle, -600, 600)
         self.robot.chassis.drive_speed(z=angle, timeout=timeout)
+    
+    def turnLeft(self, angle: float = 0.0, timeout: int | None = None) -> None:
+        """
+        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
+        Positive degrees turn left, negative degrees turn right.
+        Args:
+        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
+        timeout (int): Timeout for the action. Defaults to None.
+        """
+        self.turn(angle=angle, timeout=timeout)
+
+    def turnRight(self, angle: float = 0.0, timeout: int | None = None) -> None:
+        """
+        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
+        Positive degrees turn right, negative degrees turn left.
+        Args:
+        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
+        timeout (int): Timeout for the action. Defaults to None.
+        """
+        self.turn(angle=-angle, timeout=timeout)
 
     def turn(self, angle: float = 0.0, timeout: int | None = None) -> None:
         """
@@ -460,14 +480,31 @@ class RoboMaster:
         Returns:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
-        if not blocking:
-            return self.robot.chassis.move(
-                x=-distance, xy_speed=speed, z_speed=turnSpeed
-            )
-        else:
-            return self.robot.chassis.move(
-                x=-distance, xy_speed=speed, z_speed=turnSpeed
-            ).wait_for_completed()
+        self.forward(distance=-distance, speed=speed, turnSpeed=turnSpeed, blocking=blocking)
+    
+    def backward(
+        self,
+        distance: float = 0.5,
+        speed: float = 0.5,
+        turnSpeed: float = 30,
+        blocking: bool = False,
+    ) -> robomaster.action.Action:
+        """
+        Move the chassis a set distance in meters from its current position.
+        Positive values move backward, negative values move forward.
+        Speed is in meters/second (m/s). default speed is 0.5 m/s.
+        Turning speed is in degrees/second (°/s). Default turning speed is 30°/s.
+        Maximum move distance is 5 meters.
+        Speed must be within the range of 0.5 and 2.0 m/s.
+        Args:
+        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
+        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
+        turnspeed (float): Turning speed of the chassis (°/s). Defaults to 30°/s.
+        blocking (bool): Block until action is complete. Defaults to False.
+        Returns:
+        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        """
+        self.back(distance=distance, speed=speed, turnSpeed=turnSpeed, blocking=blocking)
         
     def left(
         self,
@@ -522,11 +559,4 @@ class RoboMaster:
         Returns:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
-        if not blocking:
-            return self.robot.chassis.move(
-                y=distance, xy_speed=speed, z_speed=turnSpeed
-            )
-        else:
-            return self.robot.chassis.move(
-                y=distance, xy_speed=speed, z_speed=turnSpeed
-            ).wait_for_completed()
+        self.left(distance=-distance, speed=speed, turnSpeed=turnSpeed, blocking=blocking)
