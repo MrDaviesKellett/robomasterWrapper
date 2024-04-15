@@ -783,3 +783,50 @@ class RoboMaster:
             return self.robotic_arm.recenter()
         else:
             return self.robotic_arm.recenter().wait_for_completed()
+
+    # Gripper
+
+    def openGripper(self, power: int = 50, blocking: bool = True) -> bool:
+        """
+        Opens the gripper.
+        Minimum power is 1 and maximum power is 100.
+        args:
+        power (int): Power of the gripper motor. Defaults to 50.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.gripper.open(power=power)
+        else:
+            return self.robot.gripper.open(power=power).wait_for_completed()
+
+    def closeGripper(self, power: int = 50, blocking: bool = True) -> bool:
+        """
+        Closes the gripper.
+        Minimum power is 1 and maximum power is 100.
+        args:
+        power (int): Power of the gripper motor. Defaults to 50.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.gripper.close(power=power)
+        else:
+            return self.robot.gripper.close(power=power).wait_for_completed()
+
+    def pauseGripper(self, blocking: bool = True) -> bool:
+        """
+        Stops the gripper motor.
+        args:
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.gripper.pause()
+        else:
+            return self.robot.gripper.pause().wait_for_completed()
+
+    def stopGripper(self, blocking: bool = True) -> bool:
+        """
+        Stops the gripper motor.
+        args:
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        return self.pauseGripper(blocking=blocking)
