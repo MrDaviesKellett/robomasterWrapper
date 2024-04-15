@@ -639,7 +639,7 @@ class RoboMaster:
         blocking (bool): Block until action is complete. Defaults to False.
         """
         angle = speed / radius * RADTODEG
-        circumference = 2 * math.pi * radius
+        circumference = 2 * pi * radius
         duration = circumference / speed
-        self.setSpeed(x=speed, z=angle, timeout=timeout)
+        self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)
