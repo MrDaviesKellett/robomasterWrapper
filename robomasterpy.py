@@ -467,9 +467,9 @@ class RoboMaster:
 
     def move(
         self,
-        xDistance: float = 0.0,
-        yDistance: float = 0.0,
-        zRotation: float = 0.0,
+        x: float = 0.0,
+        y: float = 0.0,
+        angle: float = 0.0,
         speed: float = 1,
         turnSpeed: float = 90,
         blocking: bool = True,
@@ -485,9 +485,9 @@ class RoboMaster:
         Speed must be within the range of 0.5 and 2.0 m/s.
         Turning speed must be within the range of 10 and 540°/s.
         Args:
-        xDistance (float): Distance to move in the x direction (meters). Defaults to 0.0.
-        yDistance (float): Distance to move in the y direction (meters). Defaults to 0.0.
-        zRotation (float): Angle to rotate around the z axis (°). Defaults to 0.0.
+        x (float): Distance to move in the x direction (meters). Defaults to 0.0.
+        y (float): Distance to move in the y direction (meters). Defaults to 0.0.
+        angle (float): Angle to rotate around the z axis (°). Defaults to 0.0.
         speed (float): Speed of the chassis (m/s). Defaults to 1 m/s.
         turnSpeed (float): Turning speed of the chassis (°/s). Defaults to 90°/s.
         blocking (bool): Block until action is complete. Defaults to False.
@@ -496,11 +496,11 @@ class RoboMaster:
         """
         if not blocking:
             return self.robot.chassis.move(
-                x=xDistance, y=yDistance, z=zRotation, xy_speed=speed, z_speed=turnSpeed
+                x=x, y=y, z=angle, xy_speed=speed, z_speed=turnSpeed
             )
         else:
             return self.robot.chassis.move(
-                x=xDistance, y=yDistance, z=zRotation, xy_speed=speed, z_speed=turnSpeed
+                x=x, y=y, z=angle, xy_speed=speed, z_speed=turnSpeed
             ).wait_for_completed()
 
     def forward(

@@ -14,4 +14,4 @@ rm.back(0.5)
 rm.right(0.5)
 rm.circle(0.25, 1)
 # TODO: test how this actually moves, arc or straight line with directional change?
-rm.move(1, zRotation=90)
+rm.move(1, angle=90)
