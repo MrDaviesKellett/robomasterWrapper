@@ -633,3 +633,109 @@ class RoboMaster:
         duration = circumference / speed
         self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)
+
+    # gimbal
+
+    def rotate(self, pitchSpeed: float = 0.0, yawSpeed: float = 0.0) -> None:
+        """
+        Rotate the gimbal at a set pitch and yaw speed.
+        Minimum Pitch speed is -360°/s, maximum pitch speed is +360°/s.
+        Minimum Yaw speed is -360°/s, maximum yaw speed is +360°/s.
+        Args:
+        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 0.0.
+        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 0.0.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        self.robot.gimbal.drive_speed(pitch_speed=pitchSpeed, yaw_speed=yawSpeed)
+
+    def move(
+        self,
+        pitch: float = 0.0,
+        yaw: float = 0.0,
+        pitchSpeed: float = 30.0,
+        yawSpeed: float = 30.0,
+        blocking: bool = True,
+    ) -> robomaster.action.Action:
+        """
+        Move the gimbal to a set pitch and yaw position.
+        The Origin (starting point) is at the current position of the gimbal.
+        Minimum Pitch is -55° and Maximum Pitch is +55°.
+        Minimum Yaw is -55° and Maximum Yaw is +55°.
+        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
+        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
+        Args:
+        pitch (float): Pitch position of the gimbal in degrees. Defaults to 0.0.
+        yaw (float): Yaw position of the gimbal in degrees. Defaults to 0.0.
+        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 30.0.
+        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 30.0.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.gimbal.move(
+                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            )
+        else:
+            return self.robot.gimbal.move(
+                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            ).wait_for_completed()
+
+    def moveto(
+        self,
+        pitch: float = 0.0,
+        yaw: float = 0.0,
+        pitchSpeed: float = 30.0,
+        yawSpeed: float = 30.0,
+        blocking: bool = True,
+    ) -> robomaster.action.Action:
+        """
+        Move the gimbal to a set pitch and yaw position.
+        The Origin (starting point) is the coordinate at initialisation (start up).
+        Minimum Pitch is -25° and Maximum Pitch is +30°.
+        Minimum Yaw is -250° and Maximum Yaw is +250°.
+        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
+        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
+        Args:
+        pitch (float): Pitch position of the gimbal in degrees. Defaults to 0.0.
+        yaw (float): Yaw position of the gimbal in degrees. Defaults to 0.0.
+        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 30.0.
+        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 30.0.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.gimbal.moveto(
+                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            )
+        else:
+            return self.robot.gimbal.moveto(
+                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            ).wait_for_completed()
+
+    def recenter(
+        self, pitchSpeed: float = 30.0, yawSpeed: float = 30.0, blocking: bool = True
+    ) -> robomaster.action.Action:
+        # TODO: test that min and max values are correct
+        """
+        Recenters the gimbal to its starting position.
+        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
+        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
+        """
+        if not blocking:
+            return self.robot.gimbal.recenter(
+                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            )
+        else:
+            return self.robot.gimbal.recenter(
+                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
+            ).wait_for_completed()
+
+    def resume(self) -> bool:
+        """
+        Resumes the gimbal after it has been paused.
+        """
+        return self.robot.gimbal.resume()
+
+    def suspend(self) -> bool:
+        """
+        Puts the gimbal into a paused state, where it will be loose and unpowered until resumed.
+        """
+        return self.robot.gimbal.suspend()
