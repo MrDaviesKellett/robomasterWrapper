@@ -740,6 +740,42 @@ class RoboMaster:
         """
         return self.robot.gimbal.suspend()
 
+    # Blaster
+
+    def fireBlaster(self, fireType: str = "ir", blocking: bool = True) -> bool:
+        """
+        Fires the blaster.
+        Fire type can be either "ir" or "water". Defaults to "ir".
+        "water" refers to water based pellets.
+        args:
+        fireType (str): Type of blaster fire. Defaults to "ir".
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.blaster.fire(fire_type=fireType)
+        else:
+            return self.robot.blaster.fire(fire_type=fireType).wait_for_completed()
+
+    def setBlasterLED(
+        self, brightness: int = 100, effect: str = "on", blocking: bool = True
+    ) -> bool:
+        # TODO: test effect
+        """
+        Sets the blaster LED brightness and effect.
+        Minimum brightness is 0, maximum brightness is 255.
+        Effect can be either "on" or "off". Defaults to "on".
+        args:
+        brightness (int): Brightness of the blaster LED. Defaults to 100.
+        effect (str): Effect of the blaster LED. Defaults to "on".
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robot.blaster.set_led(brightness=brightness, effect=effect)
+        else:
+            return self.robot.blaster.set_led(
+                brightness=brightness, effect=effect
+            ).wait_for_completed()
+
     # Robotic Arm
     def moveArm(self, x, z, blocking: bool = True) -> robomaster.action.Action:
         # TODO: test that min and max values are correct
