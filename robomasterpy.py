@@ -43,15 +43,11 @@ class RoboMaster:
             connection = "ap"
 
         self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
-        self.battery = self.robot.battery
-        self.blaster = self.robot.blaster
-        self.camera = self.robot.camera
-        self.chassis = self.robot.chassis
-        self.gun = Gun(self)
-        self.led = self.robot.led
-        self.gripper = Gripper(self)
-        self.arm = Arm(self)
-        self.vision = self.robot.vision
+
+        self.gun: Gun = Gun(self)
+        self.gripper: Gripper = Gripper(self)
+        self.arm: Arm = Arm(self)
+
         self.reset()
         self.setRobotMode("chassis")
 
