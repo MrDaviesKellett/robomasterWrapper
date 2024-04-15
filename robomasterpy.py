@@ -1,6 +1,7 @@
 import robomaster
 from robomaster import robot
 from robomaster import led
+from robomaster.action import Action
 from typing import overload
 from helperFuncs import clamp
 from typing import Union
@@ -142,9 +143,7 @@ class RoboMaster:
 
     # Audio
 
-    def playAudio(
-        self, path: str, blocking: bool = False, timeout=None
-    ) -> robomaster.action.Action:
+    def playAudio(self, path: str, blocking: bool = False, timeout=None) -> Action:
         """
         Play an audio file.
         Args:
@@ -156,9 +155,7 @@ class RoboMaster:
         else:
             return self.robot.play_audio(path).wait_for_completed(timeout)
 
-    def playSound(
-        self, soundID: int, blocking: bool = False, timeout=None
-    ) -> robomaster.action.Action:
+    def playSound(self, soundID: int, blocking: bool = False, timeout=None) -> Action:
         """
         Play a sound.
         Args:
@@ -418,7 +415,7 @@ class RoboMaster:
         speed: float = 1,
         turnSpeed: float = 90,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values in X move forward, negative values move backward.
@@ -437,7 +434,7 @@ class RoboMaster:
         turnSpeed (float): Turning speed of the chassis (°/s). Defaults to 90°/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         if not blocking:
             return self.robot.chassis.move(
@@ -453,7 +450,7 @@ class RoboMaster:
         distance: float = 0.5,
         speed: float = 1,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values move forward, negative values move backward.
@@ -465,7 +462,7 @@ class RoboMaster:
         speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         if not blocking:
             return self.robot.chassis.move(x=distance, xy_speed=speed)
@@ -479,7 +476,7 @@ class RoboMaster:
         distance: float = 0.5,
         speed: float = 1,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values move backward, negative values move forward.
@@ -491,7 +488,7 @@ class RoboMaster:
         speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         self.forward(distance=-distance, speed=speed, blocking=blocking)
 
@@ -501,7 +498,7 @@ class RoboMaster:
         speed: float = 1,
         turnSpeed: float = 30,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values move backward, negative values move forward.
@@ -513,7 +510,7 @@ class RoboMaster:
         speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         self.back(distance=distance, speed=speed, blocking=blocking)
 
@@ -522,7 +519,7 @@ class RoboMaster:
         distance: float = 0.5,
         speed: float = 1,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values move left, negative values move right.
@@ -534,7 +531,7 @@ class RoboMaster:
         speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         if not blocking:
             return self.robot.chassis.move(y=-distance, xy_speed=speed)
@@ -548,7 +545,7 @@ class RoboMaster:
         distance: float = 0.5,
         speed: float = 1,
         blocking: bool = True,
-    ) -> robomaster.action.Action:
+    ) -> Action:
         """
         Move the chassis a set distance in meters from its current position.
         Positive values move right, negative values move left.
@@ -561,7 +558,7 @@ class RoboMaster:
         turnspeed (float): Turning speed of the chassis (°/s). Defaults to 30°/s.
         blocking (bool): Block until action is complete. Defaults to False.
         Returns:
-        robomaster.action.Action: Action object that can be used to wait for completion or get feedback
+        Action: Action object that can be used to wait for completion or get feedback
         """
         self.left(distance=-distance, speed=speed, blocking=blocking)
 
@@ -589,139 +586,8 @@ class RoboMaster:
         self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)
 
-    # gimbal
-
-    def rotateGimbal(self, pitchSpeed: float = 0.0, yawSpeed: float = 0.0) -> None:
-        """
-        Rotate the gimbal at a set pitch and yaw speed.
-        Minimum Pitch speed is -360°/s, maximum pitch speed is +360°/s.
-        Minimum Yaw speed is -360°/s, maximum yaw speed is +360°/s.
-        Args:
-        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 0.0.
-        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 0.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        self.robot.gimbal.drive_speed(pitch_speed=pitchSpeed, yaw_speed=yawSpeed)
-
-    def moveGimbal(
-        self,
-        pitch: float = 0.0,
-        yaw: float = 0.0,
-        pitchSpeed: float = 30.0,
-        yawSpeed: float = 30.0,
-        blocking: bool = True,
-    ) -> robomaster.action.Action:
-        """
-        Move the gimbal to a set pitch and yaw position.
-        The Origin (starting point) is at the current position of the gimbal.
-        Minimum Pitch is -55° and Maximum Pitch is +55°.
-        Minimum Yaw is -55° and Maximum Yaw is +55°.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        Args:
-        pitch (float): Pitch position of the gimbal in degrees. Defaults to 0.0.
-        yaw (float): Yaw position of the gimbal in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 30.0.
-        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 30.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robot.gimbal.move(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.move(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
-
-    def moveGimbalto(
-        self,
-        pitch: float = 0.0,
-        yaw: float = 0.0,
-        pitchSpeed: float = 30.0,
-        yawSpeed: float = 30.0,
-        blocking: bool = True,
-    ) -> robomaster.action.Action:
-        """
-        Move the gimbal to a set pitch and yaw position.
-        The Origin (starting point) is the coordinate at initialisation (start up).
-        Minimum Pitch is -25° and Maximum Pitch is +30°.
-        Minimum Yaw is -250° and Maximum Yaw is +250°.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        Args:
-        pitch (float): Pitch position of the gimbal in degrees. Defaults to 0.0.
-        yaw (float): Yaw position of the gimbal in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gimbal pitch in degrees per second. Defaults to 30.0.
-        yawSpeed (float): Speed of the gimbal yaw in degrees per second. Defaults to 30.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robot.gimbal.moveto(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.moveto(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
-
-    def recenterGimbal(
-        self, pitchSpeed: float = 30.0, yawSpeed: float = 30.0, blocking: bool = True
-    ) -> robomaster.action.Action:
-        # TODO: test that min and max values are correct
-        """
-        Recenters the gimbal to its starting position.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        """
-        if not blocking:
-            return self.robot.gimbal.recenter(
-                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.recenter(
-                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
-
-    def resumeGimbal(self) -> bool:
-        """
-        Resumes the gimbal after it has been paused.
-        """
-        return self.robot.gimbal.resume()
-
-    def suspendGimbal(self) -> bool:
-        """
-        Puts the gimbal into a paused state, where it will be loose and unpowered until resumed.
-        """
-        return self.robot.gimbal.suspend()
-
-    # Blaster
-
-    def fireBlaster(self, fireType: str = "ir", times: int = 1) -> bool:
-        """
-        Fires the blaster.
-        Fire type can be either "ir" or "water". Defaults to "ir".
-        "water" refers to water based pellets.
-        args:
-        fireType (str): Type of blaster fire. Defaults to "ir".
-        times (int): Number of times the blaster should be fired. Defaults to 1.
-        """
-        return self.robot.blaster.fire(fire_type=fireType, times=times)
-
-    def setBlasterLED(self, brightness: int = 100, effect: str = "on") -> bool:
-        # TODO: test effect
-        """
-        Sets the blaster LED brightness and effect.
-        Minimum brightness is 0, maximum brightness is 255.
-        Effect can be either "on" or "off". Defaults to "on".
-        args:
-        brightness (int): Brightness of the blaster LED. Defaults to 100.
-        effect (str): Effect of the blaster LED. Defaults to "on".
-        """
-        return self.robot.blaster.set_led(brightness=brightness, effect=effect)
-
     # Robotic Arm
-    def moveArm(self, x, z, blocking: bool = True) -> robomaster.action.Action:
+    def moveArm(self, x, z, blocking: bool = True) -> Action:
         # TODO: test that min and max values are correct
         """
         Moves the robotic arm to a set position.
@@ -738,7 +604,7 @@ class RoboMaster:
         else:
             return self.robotic_arm.move(x=x, y=z).wait_for_completed()
 
-    def moveArmTo(self, x, z, blocking: bool = True) -> robomaster.action.Action:
+    def moveArmTo(self, x, z, blocking: bool = True) -> Action:
         # TODO:test that min and max values are correct
         """
         Moves the robotic arm to a set position.
@@ -755,7 +621,7 @@ class RoboMaster:
         else:
             return self.robotic_arm.move_to(x=x, y=z).wait_for_completed()
 
-    def recenterArm(self, blocking: bool = True) -> robomaster.action.Action:
+    def recenterArm(self, blocking: bool = True) -> Action:
         """
         Recenters the robotic arm to its starting position.
         """
