@@ -291,14 +291,8 @@ class RoboMaster:
         blocking (bool): Whether to block until the action is completed. Defaults to False.
         """
 
-        def stopAfterThread():
-            """
-            sub method to create a thread to wait for a certain period of time and then stop the robot.
-            """
-            self.stop()
-
         if not blocking:
-            stop_thread = Timer(duration,target=stopAfterThread, args=(duration))
+            stop_thread = Timer(duration, target=self.stop, args=())
             stop_thread.start()
         else:
             sleep(duration)
