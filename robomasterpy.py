@@ -8,7 +8,7 @@ from typing import Union
 from time import sleep
 from threading import Timer
 from math import pi
-from gimbal import Gimbal
+from gun import Gun
 
 RADTODEG = 180 / pi
 
@@ -48,7 +48,7 @@ class RoboMaster:
         self.blaster = self.robot.blaster
         self.camera = self.robot.camera
         self.chassis = self.robot.chassis
-        self.gimbal = Gimbal(self)
+        self.gun = Gun(self)
         self.led = self.robot.led
         self.robotic_arm = self.robot.robotic_arm
         self.vision = self.robot.vision
