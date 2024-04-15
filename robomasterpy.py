@@ -1,4 +1,3 @@
-import robomaster
 from robomaster import robot
 from robomaster import led
 from robomaster.action import Action
