@@ -1,20 +1,18 @@
 import robomaster
+import sys
 from robomaster import robot
 from robomaster import led
-from random import randint
 from typing import overload
 from helperFuncs import clamp
 from typing import Union
-import sys
 from time import sleep
+from threading import Thread
+from math import pi
 
-PI = 3.142
-RADTODEG = 180/PI
+RADTODEG = 180 / pi
 
 if not (sys.version_info[0:2] == (3, 7) or sys.version_info[0:2] == (3, 8)):
-    raise Exception('Robomaster lib Requires python 3.7 or 3.8')
-
-import robomaster.action
+    raise Exception("Robomaster lib Requires python 3.7 or 3.8")
 
 
 class RoboMaster:
@@ -46,7 +44,7 @@ class RoboMaster:
             connection = "rndis"
         else:
             connection = "ap"
-        
+
         self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
         self.battery = self.robot.battery
         self.blaster = self.robot.blaster
@@ -75,21 +73,21 @@ class RoboMaster:
         Returns:
         object: The module.
         """
-        if module.lower() ==  "battery":
+        if module.lower() == "battery":
             return self.battery
-        elif module.lower() ==  "blaster":
+        elif module.lower() == "blaster":
             return self.blaster
-        elif module.lower() ==  "camera":
+        elif module.lower() == "camera":
             return self.camera
-        elif module.lower() ==  "chassis":
+        elif module.lower() == "chassis":
             return self.chassis
-        elif module.lower() ==  "gimbal":
+        elif module.lower() == "gimbal":
             return self.gimbal
-        elif module.lower() ==  "led":
+        elif module.lower() == "led":
             return self.led
-        elif module.lower() ==  "robotic_arm":
+        elif module.lower() == "robotic_arm":
             return self.robotic_arm
-        elif module.lower() ==  "vision":
+        elif module.lower() == "vision":
             return self.vision
         else:
             raise ValueError(f"Invalid module name {module}")
@@ -227,16 +225,16 @@ class RoboMaster:
 
     def setLEDs(
         self,
-        r: Union[int , None] = None,
-        g: Union[int , None] = None,
-        b: Union[int , None] = None,
-        leds: Union[str , None] = None,
-        effect: Union[str , None] = None,
+        r: Union[int, None] = None,
+        g: Union[int, None] = None,
+        b: Union[int, None] = None,
+        leds: Union[str, None] = None,
+        effect: Union[str, None] = None,
     ):
 
         if r is None or g is None or b is None:
             raise ValueError("Please specify a colour or RGB values.")
-        
+
         comp = led.COMP_ALL
         effect = led.EFFECT_ON
 
@@ -264,23 +262,52 @@ class RoboMaster:
         if effect is not None:
             if effect == "on":
                 effect = led.EFFECT_ON
-            elif effect ==  "off":
+            elif effect == "off":
                 effect = led.EFFECT_OFF
-            elif effect ==  "pulse":
+            elif effect == "pulse":
                 effect = led.EFFECT_PULSE
-            elif effect ==  "flash":
+            elif effect == "flash":
                 effect = led.EFFECT_FLASH
-            elif effect ==  "breath":
+            elif effect == "breath":
                 effect = led.EFFECT_BREATH
-            elif effect ==  "scrolling":
+            elif effect == "scrolling":
                 effect = led.EFFECT_SCROLLING
 
         self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
     # Chassis
 
+    def stop(self) -> None:
+        """
+        Stop the chassis from moving
+        """
+        self.robot.chassis.stop()
+
+    def timedStop(self, duration: float = 1.0, blocking: bool = False):
+        """
+        create a thread to wait for a certain period of time and then stop the robot.
+        """
+
+        def timedStopThread(duration: float = 1.0):
+            """
+            sub method to create a thread to wait for a certain period of time and then stop the robot.
+            """
+            sleep(duration)
+            self.stop()
+
+        if not blocking:
+            stop_thread = Thread(target=timedStopThread, args=(duration))
+            stop_thread.start()
+        else:
+            sleep(duration)
+            self.stop()
+
     def setSpeed(
-        self, x: float = 0.0, y: float = 0.0, z: float = 0.0, timeout: Union[int , None] = None
+        self,
+        x: float = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
+        timeout: Union[int, None] = None,
     ) -> None:
         """
         Set the chassis speed in m/s - max speed 3.5m/s.
@@ -311,7 +338,9 @@ class RoboMaster:
 
         self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
 
-    def rotate(self, angularVelocity: float = 0.0, timeout: Union[int , None] = None) -> None:
+    def rotate(
+        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees rotate left, negative degrees rotate right.
@@ -319,14 +348,11 @@ class RoboMaster:
         angularVelocity (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
         timeout (int): Timeout for the action. Defaults to None.
         """
-        if -600 > angularVelocity > 600:
-            print("angularVelocity is out of range.")
-            print("angularVelocity requires a value between -600 and 600")
-            print("Limiting angularVelocity to +-600")
-            angularVelocity = clamp(angularVelocity, -600, 600)
-        self.robot.chassis.drive_speed(z=angularVelocity, timeout=timeout)
+        self.setSpeed(z=angularVelocity, timeout=timeout)
 
-    def rotateLeft(self, angularVelocity: float = 0.0, timeout: Union[int , None] = None) -> None:
+    def rotateLeft(
+        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees rotate left, negative degrees rotate right.
@@ -336,7 +362,9 @@ class RoboMaster:
         """
         self.rotate(angularVelocity=angularVelocity, timeout=timeout)
 
-    def rotateRight(self, angularVelocity: float = 0.0, timeout: Union[int , None] = None) -> None:
+    def rotateRight(
+        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees rotate right, negative degrees rotate left.
@@ -346,7 +374,9 @@ class RoboMaster:
         """
         self.rotate(angularVelocity=-angularVelocity, timeout=timeout)
 
-    def turn(self, angle: float = 0.0, speed: float = 90.0, blocking:bool = True) -> None:
+    def turn(
+        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
         Positive degrees turn left, negative degrees turn right.
@@ -356,11 +386,13 @@ class RoboMaster:
         blocking (bool): Whether the action should block until complete or not. Defaults to True.
         """
         if not blocking:
-            self.robot.chassis.move(z=angle,z_speed=speed)
+            self.robot.chassis.move(z=angle, z_speed=speed)
         else:
-            self.robot.chassis.move(z=angle,z_speed=speed).wait_for_completed()
-    
-    def turnLeft(self, angle: float = 0.0, speed: float = 90.0, blocking:bool = True) -> None:
+            self.robot.chassis.move(z=angle, z_speed=speed).wait_for_completed()
+
+    def turnLeft(
+        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees turn left, negative degrees turn right.
@@ -371,7 +403,9 @@ class RoboMaster:
         """
         self.turn(angle=angle, speed=speed, blocking=blocking)
 
-    def turnRight(self, angle: float = 0.0, speed: float = 90.0, blocking:bool = True) -> None:
+    def turnRight(
+        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
+    ) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees turn right, negative degrees turn left.
@@ -382,15 +416,13 @@ class RoboMaster:
         """
         self.turn(angle=-angle, speed=speed, blocking=blocking)
 
-    
-
     def setWheelRPMs(
         self,
         frontRight: int = 0,
         frontLeft: int = 0,
         backRight: int = 0,
         backLeft: int = 0,
-        timeout: Union[int , None] = None,
+        timeout: Union[int, None] = None,
     ) -> None:
         """
         Set the chassis wheels in Revolutions Per Minute (RPMs).
@@ -488,14 +520,12 @@ class RoboMaster:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
         if not blocking:
-            return self.robot.chassis.move(
-                x=distance, xy_speed=speed
-            )
+            return self.robot.chassis.move(x=distance, xy_speed=speed)
         else:
             return self.robot.chassis.move(
                 x=distance, xy_speed=speed
             ).wait_for_completed()
-    
+
     def back(
         self,
         distance: float = 0.5,
@@ -516,7 +546,7 @@ class RoboMaster:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
         self.forward(distance=-distance, speed=speed, blocking=blocking)
-    
+
     def backward(
         self,
         distance: float = 0.5,
@@ -538,7 +568,7 @@ class RoboMaster:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
         self.back(distance=distance, speed=speed, blocking=blocking)
-        
+
     def left(
         self,
         distance: float = 0.5,
@@ -559,14 +589,12 @@ class RoboMaster:
         robomaster.action.Action: Action object that can be used to wait for completion or get feedback
         """
         if not blocking:
-            return self.robot.chassis.move(
-                y=-distance, xy_speed=speed
-            )
+            return self.robot.chassis.move(y=-distance, xy_speed=speed)
         else:
             return self.robot.chassis.move(
                 y=-distance, xy_speed=speed
             ).wait_for_completed()
-    
+
     def right(
         self,
         distance: float = 0.5,
@@ -589,8 +617,26 @@ class RoboMaster:
         """
         self.left(distance=-distance, speed=speed, blocking=blocking)
 
-    def circle(self, radius:float = 0.25, speed:float = 1.0, timeout: Union[int , None] = None) -> None:
+    def circle(
+        self,
+        radius: float = 0.25,
+        speed: float = 1.0,
+        numCircles: int = 1,
+        blocking: bool = True,
+    ) -> None:
         """
+        Circle the chassis a set distance in meters from its current position.
+        Speed is in meters/second (m/s). default speed is 0.5 m/s.
+        Maximum move distance is 5 meters.
+        Speed must be within the range of 0.5 and 2.0 m/s.
+        Args:
+        radius (float): Distance to circle in the x direction (meters). Defaults to 0.25.
+        speed (float): Speed of the chassis (m/s). Defaults to 1.0 m/s.
+        numCircles (int): Number of circles to make. Defaults to 1.
+        blocking (bool): Block until action is complete. Defaults to False.
         """
-        angle = speed/radius * RADTODEG
-        self.setSpeed(x=speed,z=angle,timeout=timeout)
+        angle = speed / radius * RADTODEG
+        circumference = 2 * math.pi * radius
+        duration = circumference / speed
+        self.setSpeed(x=speed, z=angle, timeout=timeout)
+        self.timedStop(duration=duration*numCircles, blocking=blocking)
