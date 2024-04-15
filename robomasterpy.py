@@ -1,5 +1,4 @@
 import robomaster
-import sys
 from robomaster import robot
 from robomaster import led
 from typing import overload
@@ -10,9 +9,6 @@ from threading import Timer
 from math import pi
 
 RADTODEG = 180 / pi
-
-if not (sys.version_info[0:2] == (3, 7) or sys.version_info[0:2] == (3, 8)):
-    raise Exception("Robomaster lib Requires python 3.7 or 3.8")
 
 
 class RoboMaster:
@@ -153,11 +149,11 @@ class RoboMaster:
         Args:
         path (str): Path to the audio file.
         """
+        print(f"Playing audio: {path}")
         if not blocking:
             return self.robot.play_audio(path)
         else:
             return self.robot.play_audio(path).wait_for_completed(timeout)
-        print(f"Playing audio: {path}")
 
     def playSound(
         self, soundID: int, blocking: bool = False, timeout=None
@@ -167,11 +163,11 @@ class RoboMaster:
         Args:
         sound (str): Sound name.
         """
+        print(f"Playing sound: {soundID}")
         if not blocking:
             return self.robot.play_sound(soundID)
         else:
             return self.robot.play_sound(soundID).wait_for_completed(timeout)
-        print(f"Playing sound: {sound}")
 
     # LEDs
 
