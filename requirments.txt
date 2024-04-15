@@ -1,0 +1,2 @@
+# Requirments for running robomasterpy
+robomaster
