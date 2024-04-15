@@ -42,6 +42,8 @@ class RoboMaster:
         else:
             connection = "ap"
 
+        # TODO: deal with station mode QR code generation and display (openCV?)
+
         self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
 
         self.gun: Gun = Gun(self)
