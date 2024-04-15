@@ -741,3 +741,45 @@ class RoboMaster:
         return self.robot.gimbal.suspend()
 
     # Robotic Arm
+    def moveArm(self, x, z, blocking: bool = True) -> robomaster.action.Action:
+        # TODO: test that min and max values are correct
+        """
+        Moves the robotic arm to a set position.
+        The Origin (starting point) is the current position of the arm.
+        Minimum X is -100° and Maximum X is +100°.
+        Minimum Z is -100° and Maximum Z is +100°.
+        args:
+        x (float): X position of the arm in degrees. Defaults to 0.0.
+        z (float): Z position of the arm in degrees. Defaults to 0.0.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robotic_arm.move(x=x, y=z)
+        else:
+            return self.robotic_arm.move(x=x, y=z).wait_for_completed()
+
+    def moveArmTo(self, x, z, blocking: bool = True) -> robomaster.action.Action:
+        # TODO:test that min and max values are correct
+        """
+        Moves the robotic arm to a set position.
+        The Origin (starting point) is the coordinate at initialisation (start up).
+        Minimum X is -100° and Maximum X is +100°.
+        Miinimum Z is -100° and Maximum Z is +100°.
+        args:
+        x (float): X position of the arm in degrees. Defaults to 0.0.
+        z (float): Z position of the arm in degrees. Defaults to 0.0.
+        blocking (bool): Block until action is complete. Defaults to False.
+        """
+        if not blocking:
+            return self.robotic_arm.move_to(x=x, y=z)
+        else:
+            return self.robotic_arm.move_to(x=x, y=z).wait_for_completed()
+
+    def recenterArm(self, blocking: bool = True) -> robomaster.action.Action:
+        """
+        Recenters the robotic arm to its starting position.
+        """
+        if not blocking:
+            return self.robotic_arm.recenter()
+        else:
+            return self.robotic_arm.recenter().wait_for_completed()
