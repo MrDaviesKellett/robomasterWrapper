@@ -208,7 +208,6 @@ class RoboMaster:
             comp = led.COMP_ALL
         else:
             comp = led.COMP_ALL
-            effect = leds
 
         if effect == "on":
             effect = led.EFFECT_ON
