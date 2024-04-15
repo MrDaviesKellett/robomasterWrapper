@@ -648,7 +648,7 @@ class RoboMaster:
         """
         self.robot.gimbal.drive_speed(pitch_speed=pitchSpeed, yaw_speed=yawSpeed)
 
-    def move(
+    def moveGimbal(
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
@@ -679,7 +679,7 @@ class RoboMaster:
                 pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
             ).wait_for_completed()
 
-    def moveto(
+    def moveGimbalto(
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
@@ -710,7 +710,7 @@ class RoboMaster:
                 pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
             ).wait_for_completed()
 
-    def recenter(
+    def recenterGimbal(
         self, pitchSpeed: float = 30.0, yawSpeed: float = 30.0, blocking: bool = True
     ) -> robomaster.action.Action:
         # TODO: test that min and max values are correct
@@ -728,14 +728,16 @@ class RoboMaster:
                 pitch_speed=pitchSpeed, yaw_speed=yawSpeed
             ).wait_for_completed()
 
-    def resume(self) -> bool:
+    def resumeGimbal(self) -> bool:
         """
         Resumes the gimbal after it has been paused.
         """
         return self.robot.gimbal.resume()
 
-    def suspend(self) -> bool:
+    def suspendGimbal(self) -> bool:
         """
         Puts the gimbal into a paused state, where it will be loose and unpowered until resumed.
         """
         return self.robot.gimbal.suspend()
+
+    # Robotic Arm
