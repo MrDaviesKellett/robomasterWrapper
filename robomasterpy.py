@@ -4,6 +4,11 @@ from robomaster import led
 from random import randint
 from typing import overload
 from helperFuncs import clamp
+from typing import Union
+import sys
+
+if not (sys.version_info[0:2] == (3, 7) or sys.version_info[0:2] == (3, 8)):
+    raise Exception('Robomaster lib Requires python 3.7 or 3.8')
 
 import robomaster.action
 
@@ -23,21 +28,20 @@ class RoboMaster:
         serial (str, optional): Serial number of the RoboMaster device. Defaults to None.
         """
         self.robot = robot.Robot()
-        match conn_type.lower():
-            case "sta":
-                connection = "sta"
-            case "station":
-                connection = "sta"
-            case "ap":
-                connection = "ap"
-            case "device":
-                connection = "ap"
-            case "rndis":
-                connection = "rndis"
-            case "usb":
-                connection = "rndis"
-            case _:
-                connection = "sta"
+        if conn_type.lower() == "sta":
+            connection = "sta"
+        elif conn_type.lower() == "station":
+            connection = "sta"
+        elif conn_type.lower() == "ap":
+            connection = "ap"
+        elif conn_type.lower() == "device":
+            connection = "ap"
+        elif conn_type.lower() == "rndis":
+            connection = "rndis"
+        elif conn_type.lower() == "usb":
+            connection = "rndis"
+        else:
+            connection = "sta"
         self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
         self.battery = self.robot.battery
         self.blaster = self.robot.blaster
@@ -65,25 +69,24 @@ class RoboMaster:
         Returns:
         object: The module.
         """
-        match module.lower():
-            case "battery":
-                return self.battery
-            case "blaster":
-                return self.blaster
-            case "camera":
-                return self.camera
-            case "chassis":
-                return self.chassis
-            case "gimbal":
-                return self.gimbal
-            case "led":
-                return self.led
-            case "robotic_arm":
-                return self.robotic_arm
-            case "vision":
-                return self.vision
-            case _:
-                raise ValueError(f"Invalid module name {module}")
+        if module.lower() ==  "battery":
+            return self.battery
+        elif module.lower() ==  "blaster":
+            return self.blaster
+        elif module.lower() ==  "camera":
+            return self.camera
+        elif module.lower() ==  "chassis":
+            return self.chassis
+        elif module.lower() ==  "gimbal":
+            return self.gimbal
+        elif module.lower() ==  "led":
+            return self.led
+        elif module.lower() ==  "robotic_arm":
+            return self.robotic_arm
+        elif module.lower() ==  "vision":
+            return self.vision
+        else:
+            raise ValueError(f"Invalid module name {module}")
 
     def setRobotMode(self, mode: str = "free"):
         """
@@ -91,19 +94,18 @@ class RoboMaster:
         Args:
         mode (str, optional): Robot mode. free, chassis, gimbal. Defaults to "free".
         """
-        match mode.lower():
-            case "free":
-                self.mode = "free"
-                md = "sta"
-            case "chassis":
-                self.mode = "chassis"
-                md = robot.CHASSIS_LEAD
-            case "gimbal":
-                self.mode = "gimbal"
-                md = robot.GIMBAL_LEAD
-            case _:
-                self.mode = "gimbal"
-                md = robot.GIMBAL_LEAD
+        if mode.lower() == "free":
+            self.mode = "free"
+            md = "sta"
+        elif mode.lower() == "chassis":
+            self.mode = "chassis"
+            md = robot.CHASSIS_LEAD
+        elif mode.lower() == "gimbal":
+            self.mode = "gimbal"
+            md = robot.GIMBAL_LEAD
+        else:
+            self.mode = "gimbal"
+            md = robot.GIMBAL_LEAD
         self.robot.set_robot_mode(md)
 
     def getRobotMode(self) -> str:
@@ -219,58 +221,56 @@ class RoboMaster:
 
     def setLEDs(
         self,
-        r: int | None = None,
-        g: int | None = None,
-        b: int | None = None,
-        leds: str | None = None,
-        effect: str | None = None,
+        r: Union[int , None] = None,
+        g: Union[int , None] = None,
+        b: Union[int , None] = None,
+        leds: Union[str , None] = None,
+        effect: Union[str , None] = None,
     ):
 
         if r is None or g is None or b is None:
             raise ValueError("Please specify a colour or RGB values.")
 
         if leds is not None:
-            match leds:
-                case "front":
-                    comp = led.COMP_BOTTOM_FRONT
-                case "back":
-                    comp = led.COMP_BOTTOM_BACK
-                case "left":
-                    comp = led.COMP_BOTTOM_LEFT
-                case "right":
-                    comp = led.COMP_BOTTOM_RIGHT
-                case "gimbal":
-                    comp = led.COMP_TOP_ALL
-                case "gimbalLeft":
-                    comp = led.COMP_TOP_LEFT
-                case "gimbalRight":
-                    comp = led.COMP_TOP_RIGHT
-                case "all":
-                    comp = led.COMP_ALL
-                case _:
-                    effect = leds
+            if leds == "front":
+                comp = led.COMP_BOTTOM_FRONT
+            elif leds == "back":
+                comp = led.COMP_BOTTOM_BACK
+            elif leds == "left":
+                comp = led.COMP_BOTTOM_LEFT
+            elif leds == "right":
+                comp = led.COMP_BOTTOM_RIGHT
+            elif leds == "gimbal":
+                comp = led.COMP_TOP_ALL
+            elif leds == "gimbalLeft":
+                comp = led.COMP_TOP_LEFT
+            elif leds == "gimbalRight":
+                comp = led.COMP_TOP_RIGHT
+            elif leds == "all":
+                comp = led.COMP_ALL
+            else:
+                effect = leds
 
         if effect is not None:
-            match effect:
-                case "on":
-                    effect = led.EFFECT_ON
-                case "off":
-                    effect = led.EFFECT_OFF
-                case "pulse":
-                    effect = led.EFFECT_PULSE
-                case "flash":
-                    effect = led.EFFECT_FLASH
-                case "breath":
-                    effect = led.EFFECT_BREATH
-                case "scrolling":
-                    effect = led.EFFECT_SCROLLING
+            if effect == "on":
+                effect = led.EFFECT_ON
+            elif effect ==  "off":
+                effect = led.EFFECT_OFF
+            elif effect ==  "pulse":
+                effect = led.EFFECT_PULSE
+            elif effect ==  "flash":
+                effect = led.EFFECT_FLASH
+            elif effect ==  "breath":
+                effect = led.EFFECT_BREATH
+            elif effect ==  "scrolling":
+                effect = led.EFFECT_SCROLLING
 
         self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
     # Chassis
 
     def setSpeed(
-        self, x: float = 0.0, y: float = 0.0, z: float = 0.0, timeout: int | None = None
+        self, x: float = 0.0, y: float = 0.0, z: float = 0.0, timeout: Union[int , None] = None
     ) -> None:
         """
         Set the chassis speed in m/s - max speed 3.5m/s.
@@ -301,7 +301,7 @@ class RoboMaster:
 
         self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
 
-    def rotate(self, angle: float = 0.0, timeout: int | None = None) -> None:
+    def rotate(self, angle: float = 0.0, timeout: Union[int , None] = None) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees turn left, negative degrees turn right.
@@ -316,7 +316,7 @@ class RoboMaster:
             angle = clamp(angle, -600, 600)
         self.robot.chassis.drive_speed(z=angle, timeout=timeout)
     
-    def turnLeft(self, angle: float = 0.0, timeout: int | None = None) -> None:
+    def turnLeft(self, angle: float = 0.0, timeout: Union[int , None] = None) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees turn left, negative degrees turn right.
@@ -326,7 +326,7 @@ class RoboMaster:
         """
         self.turn(angle=angle, timeout=timeout)
 
-    def turnRight(self, angle: float = 0.0, timeout: int | None = None) -> None:
+    def turnRight(self, angle: float = 0.0, timeout: Union[int , None] = None) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
         Positive degrees turn right, negative degrees turn left.
@@ -336,7 +336,7 @@ class RoboMaster:
         """
         self.turn(angle=-angle, timeout=timeout)
 
-    def turn(self, angle: float = 0.0, timeout: int | None = None) -> None:
+    def turn(self, angle: float = 0.0, timeout: Union[int , None] = None) -> None:
         """
         Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
         Positive degrees turn left, negative degrees turn right.
@@ -352,7 +352,7 @@ class RoboMaster:
         frontLeft: int = 0,
         backRight: int = 0,
         backLeft: int = 0,
-        timeout: int | None = None,
+        timeout: Union[int , None] = None,
     ) -> None:
         """
         Set the chassis wheels in Revolutions Per Minute (RPMs).

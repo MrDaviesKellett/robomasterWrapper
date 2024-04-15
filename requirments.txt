@@ -1,2 +1,4 @@
 # Requirments for running robomasterpy
-robomaster
+python_version >= '3.7'
+python_version <= '3.9'
+robomaster >= 0.1.1.68

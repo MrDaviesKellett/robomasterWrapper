@@ -1,5 +1,5 @@
 from typing import overload
-
+from typing import Union
 
 @overload
 def clamp(val: int, minVal: int, maxVal: int) -> int: ...
@@ -7,7 +7,7 @@ def clamp(val: int, minVal: int, maxVal: int) -> int: ...
 def clamp(val: float, minVal: float, maxVal: float) -> float: ...
 
 
-def clamp(val: int | float, minVal: int | float, maxVal: int | float) -> int | float:
+def clamp(val: Union[int , float], minVal: Union[int , float], maxVal: Union[int , float]) -> Union[int , float]:
     """
     Clamps a value between two values.
     Args:
