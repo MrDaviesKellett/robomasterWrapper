@@ -742,16 +742,16 @@ class RoboMaster:
 
     # Blaster
 
-    def fireBlaster(self, fireType: str = "ir") -> bool:
+    def fireBlaster(self, fireType: str = "ir", times: int = 1) -> bool:
         """
         Fires the blaster.
         Fire type can be either "ir" or "water". Defaults to "ir".
         "water" refers to water based pellets.
         args:
         fireType (str): Type of blaster fire. Defaults to "ir".
-        blocking (bool): Block until action is complete. Defaults to False.
+        times (int): Number of times the blaster should be fired. Defaults to 1.
         """
-        return self.robot.blaster.fire(fire_type=fireType)
+        return self.robot.blaster.fire(fire_type=fireType, times=times)
 
     def setBlasterLED(self, brightness: int = 100, effect: str = "on") -> bool:
         # TODO: test effect
@@ -762,7 +762,6 @@ class RoboMaster:
         args:
         brightness (int): Brightness of the blaster LED. Defaults to 100.
         effect (str): Effect of the blaster LED. Defaults to "on".
-        blocking (bool): Block until action is complete. Defaults to False.
         """
         return self.robot.blaster.set_led(brightness=brightness, effect=effect)
 
