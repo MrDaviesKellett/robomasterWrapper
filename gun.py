@@ -1,10 +1,9 @@
-from robomasterpy import RoboMaster
 from robomaster import led
 from robomaster.action import Action
 
 
-class gun:
-    def __init__(self, RoboMaster: RoboMaster) -> None:
+class Gun:
+    def __init__(self, RoboMaster) -> None:
         self.robomaster = RoboMaster
         self.robot = self.robomaster.robot
 

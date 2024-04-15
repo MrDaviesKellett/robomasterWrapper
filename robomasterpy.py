@@ -219,7 +219,7 @@ class RoboMaster:
         else:
             effect = led.EFFECT_ON
 
-        self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
+        self.robot.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
     # Chassis
 
@@ -239,7 +239,7 @@ class RoboMaster:
         """
 
         if not blocking:
-            stop_thread = Timer(duration, target=self.stop, args=())
+            stop_thread = Timer(duration, self.stop, args=())
             stop_thread.start()
         else:
             sleep(duration)
@@ -581,5 +581,6 @@ class RoboMaster:
         angle = speed / radius * RADTODEG
         circumference = 2 * pi * radius
         duration = circumference / speed
+        duration *= 1.2 # account for speed up and slow down
         self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)

@@ -1,10 +1,9 @@
-from robomasterpy import RoboMaster
 from robomaster.action import Action
 from time import sleep
 
 
 class Arm:
-    def __init__(self, RoboMaster: RoboMaster) -> None:
+    def __init__(self, RoboMaster) -> None:
         self.robomaster = RoboMaster
         self.robot = self.robomaster.robot
         try:
@@ -86,7 +85,7 @@ class Arm:
 
 
 class Gripper:
-    def __init__(self, RoboMaster: RoboMaster) -> None:
+    def __init__(self, RoboMaster) -> None:
         self.robomaster = RoboMaster
         self.robot = self.robomaster.robot
 
