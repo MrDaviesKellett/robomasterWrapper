@@ -281,7 +281,8 @@ class RoboMaster:
         """
         Stop the chassis from moving
         """
-        self.robot.chassis.stop()
+        self.robot.chassis.drive_speed(0, 0, 0)
+        self.robot.chassis.drive_wheels(0, 0, 0, 0)
 
     def stopAfter(self, duration: float = 1.0, blocking: bool = False):
         """
