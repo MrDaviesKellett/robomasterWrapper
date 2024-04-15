@@ -1,5 +1,4 @@
 from robomasterpy import RoboMaster
-from typing import Union
 from robomaster import led
 from robomaster.action import Action
 
