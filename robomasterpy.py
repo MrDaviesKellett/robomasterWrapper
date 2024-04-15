@@ -77,8 +77,8 @@ class RoboMaster:
             return self.camera
         elif module.lower() == "chassis":
             return self.chassis
-        elif module.lower() == "gimbal":
-            return self.gimbal
+        elif module.lower() == "gun":
+            return self.gun
         elif module.lower() == "led":
             return self.led
         elif module.lower() == "robotic_arm":
@@ -92,7 +92,7 @@ class RoboMaster:
         """
         Set the robot mode.
         Args:
-        mode (str, optional): Robot mode. free, chassis, gimbal. Defaults to "free".
+        mode (str, optional): Robot mode. free, chassis, gun. Defaults to "free".
         """
         if mode.lower() == "free":
             self.mode = "free"
@@ -100,8 +100,8 @@ class RoboMaster:
         elif mode.lower() == "chassis":
             self.mode = "chassis"
             md = robot.CHASSIS_LEAD
-        elif mode.lower() == "gimbal":
-            self.mode = "gimbal"
+        elif mode.lower() == "gun":
+            self.mode = "gun"
             md = robot.GIMBAL_LEAD
         else:
             self.mode = "chassis"
@@ -112,7 +112,7 @@ class RoboMaster:
         """
         Get the robot mode.
         Returns:
-        str: Robot mode. free, chassis, gimbal.
+        str: Robot mode. free, chassis, gun.
         """
         return self.mode
 
@@ -181,7 +181,7 @@ class RoboMaster:
         r(int): Red value.
         g(int): Green value.
         b(int): Blue value.
-        leds (str): LED component. front, back, left, right, gimbal, gimbalLeft, gimbalRight, all. Defaults to "all".
+        leds (str): LED component. front, back, left, right, gun, gunLeft, gunRight, all. Defaults to "all".
         effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
         """
 
@@ -193,11 +193,11 @@ class RoboMaster:
             comp = led.COMP_BOTTOM_LEFT
         elif leds == "right":
             comp = led.COMP_BOTTOM_RIGHT
-        elif leds == "gimbal":
+        elif leds == "gun":
             comp = led.COMP_TOP_ALL
-        elif leds == "gimbalLeft":
+        elif leds == "gunLeft":
             comp = led.COMP_TOP_LEFT
-        elif leds == "gimbalRight":
+        elif leds == "gunRight":
             comp = led.COMP_TOP_RIGHT
         elif leds == "all":
             comp = led.COMP_ALL
