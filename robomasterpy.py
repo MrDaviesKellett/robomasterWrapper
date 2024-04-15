@@ -7,6 +7,7 @@ from typing import Union
 from time import sleep
 from threading import Timer
 from math import pi
+from gimbal import Gimbal
 
 RADTODEG = 180 / pi
 
@@ -46,7 +47,7 @@ class RoboMaster:
         self.blaster = self.robot.blaster
         self.camera = self.robot.camera
         self.chassis = self.robot.chassis
-        self.gimbal = self.robot.gimbal
+        self.gimbal = Gimbal(self)
         self.led = self.robot.led
         self.robotic_arm = self.robot.robotic_arm
         self.vision = self.robot.vision
@@ -171,62 +172,23 @@ class RoboMaster:
 
     # LEDs
 
-    @overload
-    def setLEDs(self, r: int, g: int, b: int):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        """
-        ...
-
-    @overload
-    def setLEDs(self, r: int, g: int, b: int, leds: str):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        leds (str): LED component. front, back, left, right, gimbal, gimbalLeft, gimbalRight, all. Defaults to "all".
-        """
-        ...
-
-    @overload
-    def setLEDs(self, r: int, g: int, b: int, effect: str):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
-        """
-        ...
-
-    @overload
-    def setLEDs(self, r: int, g: int, b: int, leds: str, effect: str):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        leds (str): LED component. front, back, left, right, gimbal, gimbalLeft, gimbalRight, all. Defaults to "all".
-        effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
-        """
-        ...
-
     def setLEDs(
         self,
-        r: Union[int, None] = None,
-        g: Union[int, None] = None,
-        b: Union[int, None] = None,
-        leds: Union[str, None] = None,
-        effect: Union[str, None] = None,
+        r: int = 0,
+        g: int = 0,
+        b: int = 0,
+        leds: str = "all",
+        effect: str = "on",
     ):
+        """
+        Set the robot LEDs to a specific colour.
+        Args:
+        r(int): Red value.
+        g(int): Green value.
+        b(int): Blue value.
+        leds (str): LED component. front, back, left, right, gimbal, gimbalLeft, gimbalRight, all. Defaults to "all".
+        effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
+        """
 
         if r is None or g is None or b is None:
             raise ValueError("Please specify a colour or RGB values.")
