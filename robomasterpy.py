@@ -283,12 +283,15 @@ class RoboMaster:
         """
         self.robot.chassis.stop()
 
-    def timedStop(self, duration: float = 1.0, blocking: bool = False):
+    def stopAfter(self, duration: float = 1.0, blocking: bool = False):
         """
-        create a thread to wait for a certain period of time and then stop the robot.
+        wait for a certain period of time and then stop the robot.
+        Args:
+        duration (float): Duration to wait in seconds. Defaults to 1.0.
+        blocking (bool): Whether to block until the action is completed. Defaults to False.
         """
 
-        def timedStopThread(duration: float = 1.0):
+        def stopAfterThread(duration: float = 1.0):
             """
             sub method to create a thread to wait for a certain period of time and then stop the robot.
             """
@@ -296,7 +299,7 @@ class RoboMaster:
             self.stop()
 
         if not blocking:
-            stop_thread = Thread(target=timedStopThread, args=(duration))
+            stop_thread = Thread(target=stopAfterThread, args=(duration))
             stop_thread.start()
         else:
             sleep(duration)
@@ -639,4 +642,4 @@ class RoboMaster:
         circumference = 2 * math.pi * radius
         duration = circumference / speed
         self.setSpeed(x=speed, z=angle, timeout=timeout)
-        self.timedStop(duration=duration*numCircles, blocking=blocking)
+        self.stopAfter(duration=duration * numCircles, blocking=blocking)
