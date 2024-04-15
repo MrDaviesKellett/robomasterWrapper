@@ -636,7 +636,7 @@ class RoboMaster:
 
     # gimbal
 
-    def rotate(self, pitchSpeed: float = 0.0, yawSpeed: float = 0.0) -> None:
+    def rotateGimbal(self, pitchSpeed: float = 0.0, yawSpeed: float = 0.0) -> None:
         """
         Rotate the gimbal at a set pitch and yaw speed.
         Minimum Pitch speed is -360°/s, maximum pitch speed is +360°/s.
