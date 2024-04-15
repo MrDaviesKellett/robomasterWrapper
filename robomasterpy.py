@@ -7,6 +7,7 @@ from time import sleep
 from threading import Timer
 from math import pi
 from gun import Gun
+from arm import Arm, Gripper
 
 RADTODEG = 180 / pi
 
@@ -48,7 +49,8 @@ class RoboMaster:
         self.chassis = self.robot.chassis
         self.gun = Gun(self)
         self.led = self.robot.led
-        self.robotic_arm = self.robot.robotic_arm
+        self.gripper = Gripper(self)
+        self.arm = Arm(self)
         self.vision = self.robot.vision
         self.reset()
         self.setRobotMode("chassis")
@@ -583,79 +585,3 @@ class RoboMaster:
         duration = circumference / speed
         self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)
-
-    # Robotic Arm
-    def moveArm(self, x, z, blocking: bool = True) -> Action:
-        # TODO: test that min and max values are correct
-        """
-        Moves the robotic arm to a set position.
-        The Origin (starting point) is the current position of the arm.
-        Minimum X is -100° and Maximum X is +100°.
-        Minimum Z is -100° and Maximum Z is +100°.
-        args:
-        x (float): X position of the arm in degrees. Defaults to 0.0.
-        z (float): Z position of the arm in degrees. Defaults to 0.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robotic_arm.move(x=x, y=z)
-        else:
-            return self.robotic_arm.move(x=x, y=z).wait_for_completed()
-
-    def moveArmTo(self, x, z, blocking: bool = True) -> Action:
-        # TODO:test that min and max values are correct
-        """
-        Moves the robotic arm to a set position.
-        The Origin (starting point) is the coordinate at initialisation (start up).
-        Minimum X is -100° and Maximum X is +100°.
-        Miinimum Z is -100° and Maximum Z is +100°.
-        args:
-        x (float): X position of the arm in degrees. Defaults to 0.0.
-        z (float): Z position of the arm in degrees. Defaults to 0.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robotic_arm.move_to(x=x, y=z)
-        else:
-            return self.robotic_arm.move_to(x=x, y=z).wait_for_completed()
-
-    def recenterArm(self, blocking: bool = True) -> Action:
-        """
-        Recenters the robotic arm to its starting position.
-        """
-        if not blocking:
-            return self.robotic_arm.recenter()
-        else:
-            return self.robotic_arm.recenter().wait_for_completed()
-
-    # Gripper
-
-    def openGripper(self, power: int = 50) -> bool:
-        """
-        Opens the gripper.
-        Minimum power is 1 and maximum power is 100.
-        args:
-        power (int): Power of the gripper motor. Defaults to 50.
-        """
-        return self.robot.gripper.open(power=power)
-
-    def closeGripper(self, power: int = 50) -> bool:
-        """
-        Closes the gripper.
-        Minimum power is 1 and maximum power is 100.
-        args:
-        power (int): Power of the gripper motor. Defaults to 50.
-        """
-        return self.robot.gripper.close(power=power)
-
-    def pauseGripper(self) -> bool:
-        """
-        Stops the gripper motor.
-        """
-        return self.robot.gripper.pause()
-
-    def stopGripper(self) -> bool:
-        """
-        Stops the gripper motor.
-        """
-        return self.pauseGripper()
