@@ -2,7 +2,6 @@ import robomaster
 from robomaster import robot
 from robomaster import led
 from robomaster.action import Action
-from typing import overload
 from helperFuncs import clamp
 from typing import Union
 from time import sleep
