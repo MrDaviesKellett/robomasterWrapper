@@ -742,7 +742,7 @@ class RoboMaster:
 
     # Blaster
 
-    def fireBlaster(self, fireType: str = "ir", blocking: bool = True) -> bool:
+    def fireBlaster(self, fireType: str = "ir") -> bool:
         """
         Fires the blaster.
         Fire type can be either "ir" or "water". Defaults to "ir".
@@ -751,14 +751,9 @@ class RoboMaster:
         fireType (str): Type of blaster fire. Defaults to "ir".
         blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.blaster.fire(fire_type=fireType)
-        else:
-            return self.robot.blaster.fire(fire_type=fireType).wait_for_completed()
+        return self.robot.blaster.fire(fire_type=fireType)
 
-    def setBlasterLED(
-        self, brightness: int = 100, effect: str = "on", blocking: bool = True
-    ) -> bool:
+    def setBlasterLED(self, brightness: int = 100, effect: str = "on") -> bool:
         # TODO: test effect
         """
         Sets the blaster LED brightness and effect.
@@ -769,12 +764,7 @@ class RoboMaster:
         effect (str): Effect of the blaster LED. Defaults to "on".
         blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.blaster.set_led(brightness=brightness, effect=effect)
-        else:
-            return self.robot.blaster.set_led(
-                brightness=brightness, effect=effect
-            ).wait_for_completed()
+        return self.robot.blaster.set_led(brightness=brightness, effect=effect)
 
     # Robotic Arm
     def moveArm(self, x, z, blocking: bool = True) -> robomaster.action.Action:
@@ -822,47 +812,32 @@ class RoboMaster:
 
     # Gripper
 
-    def openGripper(self, power: int = 50, blocking: bool = True) -> bool:
+    def openGripper(self, power: int = 50) -> bool:
         """
         Opens the gripper.
         Minimum power is 1 and maximum power is 100.
         args:
         power (int): Power of the gripper motor. Defaults to 50.
-        blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.gripper.open(power=power)
-        else:
-            return self.robot.gripper.open(power=power).wait_for_completed()
+        return self.robot.gripper.open(power=power)
 
-    def closeGripper(self, power: int = 50, blocking: bool = True) -> bool:
+    def closeGripper(self, power: int = 50) -> bool:
         """
         Closes the gripper.
         Minimum power is 1 and maximum power is 100.
         args:
         power (int): Power of the gripper motor. Defaults to 50.
-        blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.gripper.close(power=power)
-        else:
-            return self.robot.gripper.close(power=power).wait_for_completed()
+        return self.robot.gripper.close(power=power)
 
-    def pauseGripper(self, blocking: bool = True) -> bool:
+    def pauseGripper(self) -> bool:
         """
         Stops the gripper motor.
-        args:
-        blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.gripper.pause()
-        else:
-            return self.robot.gripper.pause().wait_for_completed()
+        return self.robot.gripper.pause()
 
-    def stopGripper(self, blocking: bool = True) -> bool:
+    def stopGripper(self) -> bool:
         """
         Stops the gripper motor.
-        args:
-        blocking (bool): Block until action is complete. Defaults to False.
         """
-        return self.pauseGripper(blocking=blocking)
+        return self.pauseGripper()
