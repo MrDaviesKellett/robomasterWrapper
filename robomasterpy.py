@@ -190,46 +190,40 @@ class RoboMaster:
         effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
         """
 
-        if r is None or g is None or b is None:
-            raise ValueError("Please specify a colour or RGB values.")
+        if leds == "front":
+            comp = led.COMP_BOTTOM_FRONT
+        elif leds == "back":
+            comp = led.COMP_BOTTOM_BACK
+        elif leds == "left":
+            comp = led.COMP_BOTTOM_LEFT
+        elif leds == "right":
+            comp = led.COMP_BOTTOM_RIGHT
+        elif leds == "gimbal":
+            comp = led.COMP_TOP_ALL
+        elif leds == "gimbalLeft":
+            comp = led.COMP_TOP_LEFT
+        elif leds == "gimbalRight":
+            comp = led.COMP_TOP_RIGHT
+        elif leds == "all":
+            comp = led.COMP_ALL
+        else:
+            comp = led.COMP_ALL
+            effect = leds
 
-        comp = led.COMP_ALL
-        effect = led.EFFECT_ON
-
-        if leds is not None:
-            if leds == "front":
-                comp = led.COMP_BOTTOM_FRONT
-            elif leds == "back":
-                comp = led.COMP_BOTTOM_BACK
-            elif leds == "left":
-                comp = led.COMP_BOTTOM_LEFT
-            elif leds == "right":
-                comp = led.COMP_BOTTOM_RIGHT
-            elif leds == "gimbal":
-                comp = led.COMP_TOP_ALL
-            elif leds == "gimbalLeft":
-                comp = led.COMP_TOP_LEFT
-            elif leds == "gimbalRight":
-                comp = led.COMP_TOP_RIGHT
-            elif leds == "all":
-                comp = led.COMP_ALL
-            else:
-                comp = led.COMP_ALL
-                effect = leds
-
-        if effect is not None:
-            if effect == "on":
-                effect = led.EFFECT_ON
-            elif effect == "off":
-                effect = led.EFFECT_OFF
-            elif effect == "pulse":
-                effect = led.EFFECT_PULSE
-            elif effect == "flash":
-                effect = led.EFFECT_FLASH
-            elif effect == "breath":
-                effect = led.EFFECT_BREATH
-            elif effect == "scrolling":
-                effect = led.EFFECT_SCROLLING
+        if effect == "on":
+            effect = led.EFFECT_ON
+        elif effect == "off":
+            effect = led.EFFECT_OFF
+        elif effect == "pulse":
+            effect = led.EFFECT_PULSE
+        elif effect == "flash":
+            effect = led.EFFECT_FLASH
+        elif effect == "breath":
+            effect = led.EFFECT_BREATH
+        elif effect == "scrolling":
+            effect = led.EFFECT_SCROLLING
+        else:
+            effect = led.EFFECT_ON
 
         self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
 
