@@ -6,7 +6,7 @@ from typing import overload
 from helperFuncs import clamp
 from typing import Union
 from time import sleep
-from threading import Thread
+from threading import Timer
 from math import pi
 
 RADTODEG = 180 / pi
@@ -291,15 +291,14 @@ class RoboMaster:
         blocking (bool): Whether to block until the action is completed. Defaults to False.
         """
 
-        def stopAfterThread(duration: float = 1.0):
+        def stopAfterThread():
             """
             sub method to create a thread to wait for a certain period of time and then stop the robot.
             """
-            sleep(duration)
             self.stop()
 
         if not blocking:
-            stop_thread = Thread(target=stopAfterThread, args=(duration))
+            stop_thread = Timer(duration,target=stopAfterThread, args=(duration))
             stop_thread.start()
         else:
             sleep(duration)
