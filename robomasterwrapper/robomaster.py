@@ -581,6 +581,6 @@ class RoboMaster:
         angle = speed / radius * RADTODEG
         circumference = 2 * pi * radius
         duration = circumference / speed
-        duration *= 1.2 # account for speed up and slow down
+        duration *= 1.5 # account for speed up and slow down
         self.setSpeed(x=speed, z=angle)
         self.stopAfter(duration=duration * numCircles, blocking=blocking)

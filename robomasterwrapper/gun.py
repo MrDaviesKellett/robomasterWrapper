@@ -71,8 +71,8 @@ class Gun:
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
-        pitchSpeed: float = 30.0,
-        yawSpeed: float = 30.0,
+        pitchSpeed: float = 50.0,
+        yawSpeed: float = 50.0,
         blocking: bool = True,
     ) -> Action:
         """
@@ -85,8 +85,8 @@ class Gun:
         Args:
         pitch (float): Pitch position of the gun in degrees. Defaults to 0.0.
         yaw (float): Yaw position of the gun in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 30.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 30.0.
+        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 50.0.
+        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 50.0.
         blocking (bool): Block until action is complete. Defaults to False.
         """
         if not blocking:
@@ -98,12 +98,12 @@ class Gun:
                 pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
             ).wait_for_completed()
 
-    def moveGunto(
+    def moveto(
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
-        pitchSpeed: float = 30.0,
-        yawSpeed: float = 30.0,
+        pitchSpeed: float = 50.0,
+        yawSpeed: float = 50.0,
         blocking: bool = True,
     ) -> Action:
         """
@@ -116,8 +116,8 @@ class Gun:
         Args:
         pitch (float): Pitch position of the gun in degrees. Defaults to 0.0.
         yaw (float): Yaw position of the gun in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 30.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 30.0.
+        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 50.0.
+        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 50.0.
         blocking (bool): Block until action is complete. Defaults to False.
         """
         if not blocking:
@@ -130,22 +130,19 @@ class Gun:
             ).wait_for_completed()
 
     def recenter(
-        self, pitchSpeed: float = 30.0, yawSpeed: float = 30.0, blocking: bool = True
+        self, pitchSpeed: float = 100.0, yawSpeed: float = 100.0, blocking: bool = True
     ) -> Action:
         # TODO: test that min and max values are correct
         """
         Recenters the gun to its starting position.
         Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
         Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
+        args:
+        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 100.0.
+        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 100.0.
+        blocking (bool): Block until action is complete. Defaults to False.
         """
-        if not blocking:
-            return self.robot.gimbal.recenter(
-                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.recenter(
-                pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
+        self.moveto(0,0,pitchSpeed=pitchSpeed,yawSpeed=yawSpeed,blocking=blocking)
 
     def resume(self) -> bool:
         """
@@ -161,7 +158,7 @@ class Gun:
 
     # Blaster
 
-    def fireBlaster(self, fireType: str = "ir", times: int = 1) -> bool:
+    def fire(self, fireType: str = "ir", times: int = 1) -> bool:
         """
         Fires the blaster.
         Fire type can be either "ir" or "water". Defaults to "ir".
@@ -172,7 +169,7 @@ class Gun:
         """
         return self.robot.blaster.fire(fire_type=fireType, times=times)
 
-    def setBlasterLED(self, brightness: int = 100, effect: str = "on") -> bool:
+    def setLED(self, brightness: int = 100, effect: str = "on") -> bool:
         # TODO: test effect
         """
         Sets the blaster LED brightness and effect.
