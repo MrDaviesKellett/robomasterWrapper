@@ -25,6 +25,8 @@ rm.circle(0.25, 1)
 rm.rotate(45)
 # stop rotating after 3 seconds
 rm.stopAfter(3)
+# display what's seen by the camera
+rm.cam.display()
 # move the gun by a given amount from the current position
 rm.gun.move(20, 20)
 rm.gun.move(-40, -60)
@@ -49,3 +51,5 @@ rm.gun.suspend()
 sleep(3) # wait 3 seconds
 # turn on power to the gun
 rm.gun.resume()
+
+

@@ -8,6 +8,7 @@ from threading import Timer
 from math import pi
 from .gun import Gun
 from .arm import Arm, Gripper
+from .camera import Camera
 
 RADTODEG = 180 / pi
 
@@ -49,6 +50,7 @@ class RoboMaster:
         self.gun: Gun = Gun(self)
         self.gripper: Gripper = Gripper(self)
         self.arm: Arm = Arm(self)
+        self.cam: Camera = Camera(self)
 
         self.reset()
         self.setRobotMode("chassis")
