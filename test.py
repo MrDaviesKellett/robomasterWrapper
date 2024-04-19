@@ -1,4 +1,4 @@
-from robomasterwrapper.robomaster import RoboMaster
+from robomasterwrapper.robomasterpy import RoboMaster
 from random import randint
 from time import sleep
 
@@ -11,20 +11,20 @@ b = randint(0, 255)
 # set the colour of all LEDs
 rm.setLEDs(r, g, b)
 # Turn left by 90 degrees
-#rm.turnLeft(90)
+rm.turnLeft(90)
 # turn right by 90 degrees
-#rm.turnRight(90)
+rm.turnRight(90)
 # move forward, left, back and right by half a metre each
-#rm.forward(0.5)
-#rm.left(0.5)
-#rm.back(0.5)
-#rm.right(0.5)
+rm.forward(0.5)
+rm.left(0.5)
+rm.back(0.5)
+rm.right(0.5)
 # move in a circle with a radius of 1/4 of a metre and at 1m/s
-#rm.circle(0.25, 1)
+rm.circle(0.25, 1)
 # continually rotate
-#rm.rotate(45)
+rm.rotate(45)
 # stop rotating after 3 seconds
-#rm.stopAfter(3)
+rm.stopAfter(3)
 # move the gun by a given amount from the current position
 rm.gun.move(20, 20)
 rm.gun.move(-40, -60)

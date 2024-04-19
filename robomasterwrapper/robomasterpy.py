@@ -1,13 +1,13 @@
 from robomaster import robot
 from robomaster import led
 from robomaster.action import Action
-from helperFuncs import clamp
+from .helperFuncs import clamp
 from typing import Union
 from time import sleep
 from threading import Timer
 from math import pi
-from gun import Gun
-from arm import Arm, Gripper
+from .gun import Gun
+from .arm import Arm, Gripper
 
 RADTODEG = 180 / pi
 
