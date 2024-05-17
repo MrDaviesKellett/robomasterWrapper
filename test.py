@@ -11,6 +11,13 @@ b = randint(0, 255)
 # set the colour of all LEDs
 rm.setLEDs(r, g, b)
 # Turn left by 90 degrees
+
+
+rm.arm.pickup()
+rm.arm.drop()
+
+exit()
+
 rm.turnLeft(90)
 # turn right by 90 degrees
 rm.turnRight(90)
