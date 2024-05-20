@@ -12,9 +12,15 @@ b = randint(0, 255)
 rm.setLEDs(r, g, b)
 # Turn left by 90 degrees
 
+rm.cam.setResolution("720p")
+rm.cam.setVisionDebug(True)
+rm.cam.view()
+rm.cam.debugMode = True
+for i in range(100):
+    rm.cam.detectLine()
+    rm.cam.view()
 
-rm.arm.pickup()
-rm.arm.drop()
+rm.close()
 
 exit()
 
