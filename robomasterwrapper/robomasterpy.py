@@ -55,6 +55,11 @@ class RoboMaster:
         self.reset()
         self.setRobotMode("chassis")
 
+    def close(self) -> None:
+        if self.cam.streaming:
+            self.cam.stop()
+        self.robot.close()
+
     def __repr__(self) -> str:
         """
         Returns the RoboMaster's serial number.
