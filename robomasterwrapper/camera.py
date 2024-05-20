@@ -131,37 +131,8 @@ class Camera:
         if self.detectMode == "marker":
             markerList = []
             for marker in info:
-                markerType = "none"
-                if marker[4] == 0:
-                    markerType = "heart"
-                if marker[4] == 0:
-                    markerType = "A"
-                if marker[4] == 0:
-                    markerType = "B"
-                if marker[4] == 0:
-                    markerType = "C"
-                if marker[4] == 10:
-                    markerType = "zero"
-                if marker[4] == 11:
-                    markerType = "one"
-                if marker[4] == 12:
-                    markerType = "two"
-                if marker[4] == 13:
-                    markerType = "three"
-                if marker[4] == 14:
-                    markerType = "four"
-                if marker[4] == 15:
-                    markerType = "five"
-                if marker[4] == 16:
-                    markerType = "six"
-                if marker[4] == 17:
-                    markerType = "seven"
-                if marker[4] == 18:
-                    markerType = "eight"
-                if marker[4] == 19:
-                    markerType = "nine"
                 if self.debugMode:
-                    print(f"marker {markerType} detected at x: {marker[0]} y: {marker[1]} w: {marker[2]} h: {marker[3]}")
+                    print(f"marker {marker[4]} detected at x: {marker[0]} y: {marker[1]} w: {marker[2]} h: {marker[3]}")
                 x = int(marker[0] * self.width)
                 y = int(marker[1] * self.height)
                 w = int(marker[2] * self.width)
