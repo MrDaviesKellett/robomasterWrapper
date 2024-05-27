@@ -1,4 +1,6 @@
 # Requirments for running robomasterpy
-python_version >= '3.7'
-python_version <= '3.9'
-robomaster >= 0.1.1.68
+# python_version >= '3.7'
+# python_version <= '3.9'
+robomaster
+simple_pid
+opencv-python

@@ -1,4 +1,5 @@
 import cv2
+from simple_pid import PID
 
 class Camera:
     def __init__(self, RoboMaster) -> None:
@@ -15,6 +16,11 @@ class Camera:
         self.height = 360
         self.debugMode = False
         self.__debugList = []
+        self.frequency = 30
+        self.followSpeed = .5
+        self.pid = PID(-330, -0, -28, setpoint=0.0, sample_time=1.0 / self.frequency) 
+        self.pid.output_limits = (-self.followSpeed/3.5 * 600,self.followSpeed/3.5 * 600)
+        
 
     # Camera Display
     def setResolution(self, resolution="360P"):
@@ -57,6 +63,11 @@ class Camera:
 
 
     # AI Vision
+
+    def setPID(self, P = 330, I = 0, D = 28):
+        self.pid.Kp = -P
+        self.pid.Ki = -I
+        self.pid.Kd = -D
 
     def setDetectMode(self, mode):
         if not mode.lower() in ['person','gesture','line','marker','robot']:
@@ -113,11 +124,11 @@ class Camera:
                 linetype = "forked"
             if info[0] == 3:
                 linetype = "crossing"
-            if self.debugMode:                    
+            if self.debugMode == 'verbose':                    
                 print(f"\n{linetype} line detected")
             pointList = []
             for i, point in enumerate(info[1:]):
-                if self.debugMode:
+                if self.debugMode == "verbose":
                     print(f"Point {i+1:>2} - x: {point[0]:.2f} y: {point[1]:.2f} t: {point[2]:>6.2f} c: {point[3]:>5.2f}")
                 x = int(point[0] * self.width)
                 y = int(point[1] * self.height)
@@ -182,3 +193,30 @@ class Camera:
 
     def detectRobot(self):
         self.detect("robot")
+    
+    def setFollowSpeed(self, speed):
+        self.followSpeed = speed
+    
+    def __followCallback(self,info):
+        self.__detectCallback(info)
+        if self.detectMode == "line":
+            if info == [0]:
+                self.robomaster.setSpeed(0,0,0)
+                return False
+            followPoint = 5
+            angle = info[followPoint+1][2]
+            val = self.pid(angle)
+            if self.debugMode:
+                print(f"following point {followPoint} tangent angle is {angle}, pid is {val}")
+            self.robomaster.setSpeed(x=self.followSpeed,z=val)
+
+    def follow(self, name=None, color='red'):
+        if name is None:
+            name = self.detectMode
+        if not self.streaming:
+            self.start()
+        self.detectMode = name
+        self.vision.sub_detect_info(name,color,self.__followCallback)
+
+    def followLine(self, color = 'red'):
+        self.follow('line', color)

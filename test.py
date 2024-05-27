@@ -10,20 +10,22 @@ g = randint(0, 255)
 b = randint(0, 255)
 # set the colour of all LEDs
 rm.setLEDs(r, g, b)
-# Turn left by 90 degrees
 
-rm.cam.setResolution("720p")
+
 rm.cam.setVisionDebug(True)
 rm.cam.view()
+rm.cam.followSpeed = 2
+rm.cam.setPID(330,1,20)
 rm.cam.debugMode = True
 for i in range(100):
-    rm.cam.detectLine()
+    rm.cam.followLine()
     rm.cam.view()
 
 rm.close()
 
 exit()
 
+# Turn left by 90 degrees
 rm.turnLeft(90)
 # turn right by 90 degrees
 rm.turnRight(90)
