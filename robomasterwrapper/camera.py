@@ -81,6 +81,13 @@ class Camera:
     # AI Vision
 
     def setPID(self, P=330, I=0, D=28):
+        """
+        set the PID values
+        Args:
+        P(Int: optional): P = Proportional
+        I(Int: optional): I = Integral
+        D(Int: optional): D = Derivative
+        """
         self.pid.Kp = -P
         self.pid.Ki = -I
         self.pid.Kd = -D
