@@ -358,7 +358,7 @@ class Camera:
         """
         self.follow("line", color)
 
-    def moveToMarker(self, markerType="0", color="red", error=0.01, speed=0.5):
+    def moveToMarker(self, markerType="1", color="red", error=0.01, speed=0.5):
         """
         Detect and move in front of a marker (red, green or blue)
         Args:

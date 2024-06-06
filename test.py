@@ -13,11 +13,21 @@ rm.setLEDs(r, g, b)
 
 
 rm.cam.setVisionDebug(True)
-rm.cam.followSpeed = 2
-rm.cam.setPID(330,1,20)
 rm.cam.debugMode = True
-for i in range(100):
-    rm.cam.detectMarker()
+
+# Bring the arm down to ground level
+rm.arm.moveTo(x=0, z=50)
+rm.arm.gripper.open()
+sleep(1.5)
+rm.arm.move(x=175, z=-250)
+rm.arm.moveTo(x=175, z=-200)
+
+# move the robot to the marker
+rm.cam.moveToMarker("1")
+
+# close the gripper
+rm.arm.gripper.close()
+sleep(1.5)
 
 rm.close()
 
@@ -43,7 +53,7 @@ rm.cam.display()
 # move the gun by a given amount from the current position
 rm.gun.move(20, 20)
 rm.gun.move(-40, -60)
-sleep(2) # wait 2 seconds
+sleep(2)  # wait 2 seconds
 # move the gun back to it's centre
 rm.gun.recenter()
 # move the gun to a specific location (always from the origin)
@@ -54,15 +64,13 @@ rm.gun.fire(times=3)
 for i in range(256):
     rm.gun.setLED(i)
     sleep(0.02)  # TODO: test how often commands can be sent.
-sleep(1) # wait for a second
+sleep(1)  # wait for a second
 # turn off the gun's light
 rm.gun.setLED(0)
 # recentre the gun
 rm.gun.recenter()
 # turn off power to the gun
 rm.gun.suspend()
-sleep(3) # wait 3 seconds
+sleep(3)  # wait 3 seconds
 # turn on power to the gun
 rm.gun.resume()
-
-
