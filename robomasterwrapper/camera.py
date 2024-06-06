@@ -1,14 +1,16 @@
 import cv2
 from simple_pid import PID
+from robomasterpy import RoboMaster
 
 
 class Camera:
-    def __init__(self, RoboMaster) -> None:
-        self.robomaster = RoboMaster
+    def __init__(self, robomaster: RoboMaster) -> None:
+        self.robomaster: RoboMaster = robomaster
         self.robot = self.robomaster.robot
         self.camera = self.robot.camera
         self.vision = self.robot.vision
         self.streaming = False
+        self.detecting = False
         self.detectMode = "line"
         self.visionDebug = False
         self.debugColor = (0, 255, 0)
@@ -54,6 +56,7 @@ class Camera:
         """
         self.camera.stop_video_stream()
         self.streaming = False
+        self.detecting = False
         cv2.destroyAllWindows()
 
     def start(self) -> None:
@@ -248,7 +251,9 @@ class Camera:
         if not self.streaming:
             self.start()
         self.detectMode = name
-        self.vision.sub_detect_info(name, color, self.__detectCallback)
+        if not self.detecting:
+            self.vision.sub_detect_info(name, color, self.__detectCallback)
+            self.detecting = True
 
     def detectPerson(self) -> None:
         """
@@ -289,7 +294,7 @@ class Camera:
         Set the follwowing speed
         """
         self.followSpeed = speed
-    
+
     def setFollowDistance(self, distance):
         """
         Set the following distance
@@ -327,11 +332,7 @@ class Camera:
             if info == [0]:
                 self.robomaster.setSpeed(0, 0, 0)
                 return False
-            #TODO: follow markers maintaining a specific distance
-            x = int(marker[0] * self.width)
-            y = int(marker[1] * self.height)
-            w = int(marker[2] * self.width)
-            h = int(marker[3] * self.height)
+            # TODO: follow markers maintaining a specific distance
 
     def follow(self, name=None, color="red"):
         """
@@ -345,7 +346,9 @@ class Camera:
         if not self.streaming:
             self.start()
         self.detectMode = name
-        self.vision.sub_detect_info(name, color, self.__followCallback)
+        if not self.detecting:
+            self.vision.sub_detect_info(name, color, self.__followCallback)
+            self.detecting = True
 
     def followLine(self, color="red"):
         """
@@ -354,3 +357,64 @@ class Camera:
         color(str, optional): "red", "green" or "blue", Default to "red"
         """
         self.follow("line", color)
+
+    def moveToMarker(self, markerType="0", color="red", error=0.01, speed=0.5):
+        """
+        Detect and move in front of a marker (red, green or blue)
+        Args:
+        markerType(str, optional): the type of marker to follow, Default to "0"
+        color(str, optional): "red", "green" or "blue", Default to "red"
+        error(float, optional): the error margin for the detection, Default to 0.01
+        speed(float, optional): the speed of the robot in m/s, Default to 0.5 m/s
+        """
+
+        if type(marker) is not str:
+            try:
+                marker = str(marker)
+            except ValueError:
+                raise TypeError("marker must be a string")
+
+        def _moveToMarkerCallback(self, info):
+            """
+            Detect and move to a marker (red, green or blue)
+            Args:
+            info(dict): The information of the detected object
+            """
+
+            for marker in info:
+                if marker[4] == markerType:
+
+                    if self.debugMode == "verbose":
+                        print(
+                            f"\nmarker {info[4]} detected at x: {info[0]} y: {info[1]} w: {info[2]} h: {info[3]}\n"
+                        )
+
+                    x = marker[0]  # range of 0 to 1
+                    y = marker[1]  # range of 0 to 1
+                    w = marker[2]  # range of 0 to 1
+                    h = marker[3]  # range of 0 to 1
+
+                    # map x and y into -1 to 1 (for left and right movement of the robot)
+                    x = x * 2 - 1
+
+                    if -error < x < error:
+                        if y < 1 - error:
+                            self.robomaster.setSpeed(
+                                x * speed, y * speed, 0
+                            )  # move left/right and forward
+                        else:
+                            self.robomaster.setSpeed(x * speed, 0, 0)  # move left/right
+                    elif y < 1 - error:
+                        self.robomaster.setSpeed(0, y * speed, 0)  # just move forward..
+                    else:
+                        self.stop()
+                        return
+
+        if not self.streaming:
+            self.start()
+        self.detectMode = "marker"
+        if not self.detecting:
+            self.detecting = True
+            self.vision.sub_detect_info(
+                self.detectMode, color, self._moveToMarkerCallback
+            )
