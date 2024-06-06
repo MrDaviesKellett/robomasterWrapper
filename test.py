@@ -13,13 +13,11 @@ rm.setLEDs(r, g, b)
 
 
 rm.cam.setVisionDebug(True)
-rm.cam.view()
 rm.cam.followSpeed = 2
 rm.cam.setPID(330,1,20)
 rm.cam.debugMode = True
 for i in range(100):
-    rm.cam.followLine()
-    rm.cam.view()
+    rm.cam.detectMarker()
 
 rm.close()
 

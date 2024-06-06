@@ -19,6 +19,7 @@ class Camera:
         self.__debugList = []
         self.frequency = 30
         self.followSpeed = 0.5
+        self.followDistance = 0.5
         self.pid = PID(-330, -0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
         self.pid.output_limits = (
             -self.followSpeed / 3.5 * 600,
@@ -288,10 +289,24 @@ class Camera:
         Set the follwowing speed
         """
         self.followSpeed = speed
+    
+    def setFollowDistance(self, distance):
+        """
+        Set the following distance
+        """
+        self.followDistance = distance
+
+    def __lookatCallback(self, info):
+        """
+        Detect and look at things in the video stream on device
+        Args:
+        info(dict): The information of the detected object
+        """
+        self.__detectCallback(info)
 
     def __followCallback(self, info):
         """
-        detect and follow things in the video stream on device
+        Detect and follow things in the video stream on device
         Args:
         info(dict): The information of the detected object
         """
@@ -308,6 +323,15 @@ class Camera:
                     f"following point {followPoint} tangent angle is {angle}, pid is {val}"
                 )
             self.robomaster.setSpeed(x=self.followSpeed, z=val)
+        if self.detectMode == "marker":
+            if info == [0]:
+                self.robomaster.setSpeed(0, 0, 0)
+                return False
+            #TODO: follow markers maintaining a specific distance
+            x = int(marker[0] * self.width)
+            y = int(marker[1] * self.height)
+            w = int(marker[2] * self.width)
+            h = int(marker[3] * self.height)
 
     def follow(self, name=None, color="red"):
         """
