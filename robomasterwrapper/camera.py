@@ -1,11 +1,10 @@
 import cv2
 from simple_pid import PID
-from robomasterpy import RoboMaster
 
 
 class Camera:
-    def __init__(self, robomaster: RoboMaster) -> None:
-        self.robomaster: RoboMaster = robomaster
+    def __init__(self, robomaster) -> None:
+        self.robomaster = robomaster
         self.robot = self.robomaster.robot
         self.camera = self.robot.camera
         self.vision = self.robot.vision
@@ -22,6 +21,7 @@ class Camera:
         self.frequency = 30
         self.followSpeed = 0.5
         self.followDistance = 0.5
+        self.atMarker = False
         self.pid = PID(-330, -0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
         self.pid.output_limits = (
             -self.followSpeed / 3.5 * 600,
@@ -358,63 +358,90 @@ class Camera:
         """
         self.follow("line", color)
 
-    def moveToMarker(self, markerType="1", color="red", error=0.01, speed=0.5):
+    def moveToMarker(self, markerType="1", color="red", error=0.04, speed=1, minSpeed = 0.02, targetX = 0, targetY = 0.5):
         """
         Detect and move in front of a marker (red, green or blue)
         Args:
         markerType(str, optional): the type of marker to follow, Default to "0"
         color(str, optional): "red", "green" or "blue", Default to "red"
-        error(float, optional): the error margin for the detection, Default to 0.01
+        error(float, optional): the error margin for the detection, Default to 0.03
         speed(float, optional): the speed of the robot in m/s, Default to 0.5 m/s
+        minSpeed(float, optional): the minimum speed in m/s the robot should move, Default 0.02 m/s
+        targetX(float, optional): the target position of the marker on the camera view in x -1 is the left of the view 1 is the right of the view
+        targetY(float, optional): the garget position of the marker on the camera view in y -1 is the top of the view 1 is the bottom of the view
         """
 
-        if type(marker) is not str:
+        if type(markerType) is not str:
             try:
-                marker = str(marker)
+                markerType = str(markerType)
             except ValueError:
-                raise TypeError("marker must be a string")
+                raise TypeError("markerType must be a string")
+            
+        self.atMarker = False
 
-        def _moveToMarkerCallback(self, info):
+        def _moveToMarkerCallback(info):
             """
             Detect and move to a marker (red, green or blue)
             Args:
             info(dict): The information of the detected object
             """
+            if not info == []:
+                for marker in info:
+                    x = 0
+                    y = 0
+                    if marker[4] == markerType:
 
-            for marker in info:
-                if marker[4] == markerType:
+                        x = marker[0]  # range of 0 to 1
+                        y = marker[1]  # range of 0 to 1
 
-                    if self.debugMode == "verbose":
-                        print(
-                            f"\nmarker {info[4]} detected at x: {info[0]} y: {info[1]} w: {info[2]} h: {info[3]}\n"
-                        )
+                        # map x into -1 to 1 (for left and right movement of the robot)
+                        x = x * 2 - 1
+                        y = y * 2 - 1
 
-                    x = marker[0]  # range of 0 to 1
-                    y = marker[1]  # range of 0 to 1
-                    w = marker[2]  # range of 0 to 1
-                    h = marker[3]  # range of 0 to 1
+                        if self.debugMode == "verbose":
+                            print(
+                                f"marker {marker[4]} detected at x: {x:.3f} y: {y:.3f} w: {marker[2]:.3f} h: {marker[3]:.3f}"
+                            )
+                        
+                        if x < targetX - error or x > targetX + error:
+                            xMove = (x - targetX) * speed
+                            if abs(xMove) < minSpeed:
+                                if x > 1:
+                                    xMove = minSpeed
+                                else:
+                                    xMove = -minSpeed
+                            if y < targetY - error or y > targetY + error:
+                                yMove = (y - targetY) * speed
+                                if abs(yMove) < minSpeed:
+                                    if y > 1:
+                                        yMove = minSpeed
+                                    else:
+                                        yMove = -minSpeed
+                                self.robomaster.setSpeed(-yMove, xMove, 0)  # move left/right
+                            else:
+                                self.robomaster.setSpeed(0, xMove, 0)  # move left/right
 
-                    # map x and y into -1 to 1 (for left and right movement of the robot)
-                    x = x * 2 - 1
-
-                    if -error < x < error:
-                        if y < 1 - error:
-                            self.robomaster.setSpeed(
-                                x * speed, y * speed, 0
-                            )  # move left/right and forward
-                        else:
-                            self.robomaster.setSpeed(x * speed, 0, 0)  # move left/right
-                    elif y < 1 - error:
-                        self.robomaster.setSpeed(0, y * speed, 0)  # just move forward..
-                    else:
-                        self.stop()
-                        return
+                        if y < targetY - error or y > targetY + error:
+                            yMove = (y - targetY) * speed
+                            if abs(yMove) < minSpeed:
+                                if y > 1:
+                                    yMove = minSpeed
+                                else:
+                                    yMove = -minSpeed
+                            self.robomaster.setSpeed(-yMove, 0, 0)  # just move forward..
+                        if targetY - error < y < targetY + error and targetX - error < x < targetX + error:
+                            self.stop()
+                            self.atMarker = True
+                            return True
+            else:
+                self.stop()            
+            return False
 
         if not self.streaming:
             self.start()
         self.detectMode = "marker"
         if not self.detecting:
             self.detecting = True
-            self.vision.sub_detect_info(
-                self.detectMode, color, self._moveToMarkerCallback
+            return self.vision.sub_detect_info(
+                self.detectMode, color, _moveToMarkerCallback
             )

@@ -13,17 +13,22 @@ rm.setLEDs(r, g, b)
 
 
 rm.cam.setVisionDebug(True)
-rm.cam.debugMode = True
+rm.cam.debugMode = "verbose"
 
 # Bring the arm down to ground level
 rm.arm.moveTo(x=0, z=50)
 rm.arm.gripper.open()
 sleep(1.5)
 rm.arm.move(x=175, z=-250)
-rm.arm.moveTo(x=175, z=-200)
+rm.arm.moveTo(x=175, z=-20)
+
+rm.cam.view()
 
 # move the robot to the marker
-rm.cam.moveToMarker("1")
+rm.cam.moveToMarker("1",targetY=-0.05)
+while not rm.cam.atMarker:
+    rm.cam.view() # update the camera view
+    sleep(0.25) # wait for a quater of a second (4 frames a second)
 
 # close the gripper
 rm.arm.gripper.close()

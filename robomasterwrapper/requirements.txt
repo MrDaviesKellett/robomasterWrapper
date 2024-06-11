@@ -2,4 +2,4 @@
 python_version >= '3.7',<= '3.9'
 robomaster >= 0.1.1.68
 simple_pid
-opencv-python
+opencv-python = 4.2.0.34
