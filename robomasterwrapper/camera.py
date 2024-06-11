@@ -54,6 +54,7 @@ class Camera:
         """
         Stop the video stream
         """
+        self.vision.unsub_detect_info(self.detectMode)
         self.camera.stop_video_stream()
         self.streaming = False
         self.detecting = False
@@ -71,16 +72,19 @@ class Camera:
         View the video stream
         """
         if not self.streaming:
-            self.start()
-        img = self.camera.read_cv2_image(strategy="newest")
-        while self.__debugList:
-            item = self.__debugList.pop()
-            if item["type"] == "box":
-                cv2.rectangle(img, item["start"], item["end"], item["color"], 2)
-            if item["type"] == "point":
-                cv2.circle(img, item["point"], 2, item["color"], -1)
-        cv2.imshow("Robot", img)
-        cv2.waitKey(1)
+            print("Camera is not streaming, please use the cam.start() command first")
+        try:
+            img = self.camera.read_cv2_image(strategy="newest")
+            while self.__debugList:
+                item = self.__debugList.pop()
+                if item["type"] == "box":
+                    cv2.rectangle(img, item["start"], item["end"], item["color"], 2)
+                if item["type"] == "point":
+                    cv2.circle(img, item["point"], 2, item["color"], -1)
+            cv2.imshow("Robot", img)
+            cv2.waitKey(1)
+        except:
+            return False
 
     # AI Vision
 
@@ -358,7 +362,7 @@ class Camera:
         """
         self.follow("line", color)
 
-    def moveToMarker(self, markerType="1", color="red", error=0.04, speed=1, minSpeed = 0.02, targetX = 0, targetY = 0.5):
+    def moveToMarker(self, markerType="1", color="red", error=0.06, speed=1, minSpeed = 0.02, targetX = 0, targetY = 0.5):
         """
         Detect and move in front of a marker (red, green or blue)
         Args:
@@ -410,18 +414,8 @@ class Camera:
                                     xMove = minSpeed
                                 else:
                                     xMove = -minSpeed
-                            if y < targetY - error or y > targetY + error:
-                                yMove = (y - targetY) * speed
-                                if abs(yMove) < minSpeed:
-                                    if y > 1:
-                                        yMove = minSpeed
-                                    else:
-                                        yMove = -minSpeed
-                                self.robomaster.setSpeed(-yMove, xMove, 0)  # move left/right
-                            else:
-                                self.robomaster.setSpeed(0, xMove, 0)  # move left/right
-
-                        if y < targetY - error or y > targetY + error:
+                            self.robomaster.setSpeed(0, xMove, 0)  # move left/right
+                        elif y < targetY - error or y > targetY + error:
                             yMove = (y - targetY) * speed
                             if abs(yMove) < minSpeed:
                                 if y > 1:
@@ -430,11 +424,16 @@ class Camera:
                                     yMove = -minSpeed
                             self.robomaster.setSpeed(-yMove, 0, 0)  # just move forward..
                         if targetY - error < y < targetY + error and targetX - error < x < targetX + error:
+                            if self.debugMode == "verbose":
+                                print("arrived at Marker")
                             self.stop()
+                            self.robomaster.stop()
                             self.atMarker = True
                             return True
             else:
-                self.stop()            
+                if self.debugMode == "verbose":
+                    print("no marker found!")
+                #self.robomaster.stop()           
             return False
 
         if not self.streaming:
@@ -442,6 +441,6 @@ class Camera:
         self.detectMode = "marker"
         if not self.detecting:
             self.detecting = True
-            return self.vision.sub_detect_info(
+            self.vision.sub_detect_info(
                 self.detectMode, color, _moveToMarkerCallback
             )

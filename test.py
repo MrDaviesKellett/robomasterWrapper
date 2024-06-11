@@ -22,10 +22,12 @@ sleep(1.5)
 rm.arm.move(x=175, z=-250)
 rm.arm.moveTo(x=175, z=-20)
 
+rm.cam.start()
+sleep(0.1)
 rm.cam.view()
 
 # move the robot to the marker
-rm.cam.moveToMarker("1",targetY=-0.05)
+rm.cam.moveToMarker("1",targetY=-0.1)
 while not rm.cam.atMarker:
     rm.cam.view() # update the camera view
     sleep(0.25) # wait for a quater of a second (4 frames a second)
