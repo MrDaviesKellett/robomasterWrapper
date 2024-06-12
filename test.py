@@ -1,4 +1,4 @@
-from robomasterwrapper.robomasterpy import RoboMaster
+from robowrap.robowrap import RoboMaster
 from random import randint
 from time import sleep
 
