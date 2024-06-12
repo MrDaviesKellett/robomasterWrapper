@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+print([line.strip() for line in open("requirements.txt").readlines()])
 setup(
     name='robowrap',
     version='0.7.0',
@@ -12,5 +13,5 @@ setup(
     'Operating System :: OS Independent',
     ],
     python_requires='>=3.7, <3.9',
-    install_requires=[line.strip() for line in open("requirements.txt").readlines()],
+    install_requires=["robomaster>='0.1.1.68'","simple_pid","opencv-python=='4.2.0.34'"],
 )

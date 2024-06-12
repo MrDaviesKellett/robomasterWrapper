@@ -1,0 +1,6 @@
+setup.py
+robowrap.egg-info/PKG-INFO
+robowrap.egg-info/SOURCES.txt
+robowrap.egg-info/dependency_links.txt
+robowrap.egg-info/requires.txt
+robowrap.egg-info/top_level.txt

@@ -1,0 +1,14 @@
+Metadata-Version: 1.2
+Name: robowrap
+Version: 0.7.0
+Summary: A wrapper for the DJI robomaster library for Python, makes programming the robomaster a little eeasier.
+Home-page: UNKNOWN
+Author: Martin Davies
+Author-email: mdavies@kellettschool.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7, <3.9
