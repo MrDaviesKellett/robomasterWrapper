@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-print([line.strip() for line in open("requirements.txt").readlines()])
 setup(
     name='robowrap',
     version='0.7.0',
