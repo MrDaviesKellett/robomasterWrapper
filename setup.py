@@ -1,7 +1,13 @@
 from setuptools import setup, find_packages
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name='robowrap',
-    version='0.7.3',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    version='0.7.5',
     author='Martin Davies',
     author_email='mdavies@kellettschool.com',
     description='A wrapper for the DJI robomaster library for Python, makes programming the robomaster a little eeasier.',
