@@ -54,31 +54,34 @@ class Camera:
         """
         Stop the video stream
         """
-        self.vision.unsub_detect_info(self.detectMode)
-        self.detecting = False
+        if self.detecting:
+            self.vision.unsub_detect_info(self.detectMode)
+            self.detecting = False
 
     def stop(self) -> None:
         """
         Stop the video stream
         """
         self.stopDetect()
-        self.camera.stop_video_stream()
-        self.streaming = False
-        cv2.destroyAllWindows()
+        if self.streaming:
+            self.camera.stop_video_stream()
+            self.streaming = False
+            cv2.destroyAllWindows()
 
     def start(self) -> None:
         """
         Start the video stream
         """
-        self.camera.start_video_stream(display=False, resolution=self.resolution)
-        self.streaming = True
+        if not self.streaming:
+            self.camera.start_video_stream(display=False, resolution=self.resolution)
+            self.streaming = True
 
     def view(self) -> None:
         """
         View the video stream
         """
         if not self.streaming:
-            print("Camera is not streaming, please use the cam.start() command first")
+            self.start()
         try:
             img = self.camera.read_cv2_image(strategy="newest")
             while self.__debugList:

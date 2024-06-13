@@ -27,14 +27,7 @@ class RoboMaster:
         protocol (str, optional): Protocol. "tcp" or "udp". Defaults to "tcp".
         serial (str, optional): Serial number of the RoboMaster device. Defaults to None.
         """
-        try:
-            self.robot = robot.Robot()
-        except AttributeError:
-            sleep(3)
-            self.robot = robot.Robot()
-        except:
-            print("Robot could not be connected - run your code again...")
-            return False
+        self.robot = robot.Robot()
         
         if conn_type.lower() == "sta":
             connection = "sta"
@@ -52,8 +45,17 @@ class RoboMaster:
             connection = "ap"
 
         # TODO: deal with station mode QR code generation and display (openCV?)
-
-        self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
+        if connection == "sta":
+            pass
+                
+        try:
+            self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
+        except AttributeError:
+            sleep(3)
+            self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
+        except:
+            print("Robot could not be connected - run your code again...")
+            return False
 
         self.gun: Gun = Gun(self)
         self.gripper: Gripper = Gripper(self)
