@@ -1,17 +1,28 @@
-# Mr Davies' Robomaster Wrapper
+# robowrap
+__a wrapper for the DJI Robomaster library to make use of the library easier for secondary students__
+
+_Please note that this package requires an older version of python3, this is due to the [Robomaster SDK](https://github.com/dji-sdk/RoboMaster-SDK) not supporting Python 3.9 onwards yet._
+
+Please use **Python 3.7** or **Python 3.8**
 
 ## Installation
 
  1. Install [Python 3.8.2](https://www.python.org/downloads/release/python-382/)
- 2. Install robomaster lib using the command mac:`pip3 install robomaster` windows:`pip install robomaster`
- 3. Press the green _Code_ button at the top right of this github page
- 4. Press Download Zip
- 5. Unzip the files
- 6. Copy the `robomasterwrapper` folder into your code folder _where your robomaster code is_
+ 2. Run the following _pip_ command:
 
-look at the test.py file to see how to use this wrapper.
+_windows:_
+``` sh
+python -m pip install robowrap --user
+```
+
+_mac:_
+``` sh
+python3 -m pip install robowrap --user
+```
+
+look at the [test.py](https://github.com/MrDaviesKellett/robomasterWrapper/blob/main/test.py) file to see how to use this wrapper.
 
 ## still to do:
 - [ ] documentation
-- [ ] camera
-- [ ] line following
+- [x] camera
+- [x] line following
