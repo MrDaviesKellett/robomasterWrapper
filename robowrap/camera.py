@@ -389,6 +389,9 @@ class Camera:
             Args:
             info(dict): The information of the detected object
             """
+            if self.atMarker:
+                return
+            
             if not info == []:
                 for marker in info:
                     x = 0

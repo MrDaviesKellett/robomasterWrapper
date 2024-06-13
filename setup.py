@@ -7,7 +7,7 @@ setup(
     name='robowrap',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='0.7.7',
+    version='0.7.8',
     author='Martin Davies',
     author_email='mdavies@kellettschool.com',
     description='A wrapper for the DJI robomaster library for Python, makes programming the robomaster a little eeasier.',
@@ -18,5 +18,8 @@ setup(
     'Operating System :: OS Independent',
     ],
     python_requires='>=3.7, <3.9',
-    install_requires=['robomaster','simple_pid','opencv-python==4.2.0.34'],
+    install_requires=['robomaster',
+                      'simple_pid',
+                      'opencv-python==4.2.0.34 ; platform_system=="Windows"',
+                      'opencv-python ; platform_system!="Windows"'],
 )
