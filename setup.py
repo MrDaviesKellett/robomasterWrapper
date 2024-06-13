@@ -7,7 +7,7 @@ setup(
     name='robowrap',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='0.7.6',
+    version='0.7.7',
     author='Martin Davies',
     author_email='mdavies@kellettschool.com',
     description='A wrapper for the DJI robomaster library for Python, makes programming the robomaster a little eeasier.',
