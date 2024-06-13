@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='robowrap',
-    version='0.7.0',
+    version='0.7.3',
     author='Martin Davies',
     author_email='mdavies@kellettschool.com',
     description='A wrapper for the DJI robomaster library for Python, makes programming the robomaster a little eeasier.',
@@ -12,5 +12,5 @@ setup(
     'Operating System :: OS Independent',
     ],
     python_requires='>=3.7, <3.9',
-    install_requires=["robomaster>='0.1.1.68'","simple_pid","opencv-python=='4.2.0.34'"],
+    install_requires=['robomaster','simple_pid','opencv-python==4.2.0.34'],
 )
