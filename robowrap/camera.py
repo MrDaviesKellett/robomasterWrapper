@@ -50,14 +50,20 @@ class Camera:
             self.width = 1280
             self.height = 720
 
-    def stop(self) -> None:
+    def stopDetect(self) -> None:
         """
         Stop the video stream
         """
         self.vision.unsub_detect_info(self.detectMode)
+        self.detecting = False
+
+    def stop(self) -> None:
+        """
+        Stop the video stream
+        """
+        self.stopDetect()
         self.camera.stop_video_stream()
         self.streaming = False
-        self.detecting = False
         cv2.destroyAllWindows()
 
     def start(self) -> None:
@@ -390,6 +396,7 @@ class Camera:
             info(dict): The information of the detected object
             """
             if self.atMarker:
+                self.robomaster.stop()
                 return
             
             if not info == []:
@@ -429,8 +436,8 @@ class Camera:
                         if targetY - error < y < targetY + error and targetX - error < x < targetX + error:
                             if self.debugMode == "verbose":
                                 print("arrived at Marker")
-                            self.stop()
                             self.robomaster.stop()
+                            self.stopDetect()
                             self.atMarker = True
                             return True
             else:
