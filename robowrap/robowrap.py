@@ -27,7 +27,15 @@ class RoboMaster:
         protocol (str, optional): Protocol. "tcp" or "udp". Defaults to "tcp".
         serial (str, optional): Serial number of the RoboMaster device. Defaults to None.
         """
-        self.robot = robot.Robot()
+        try:
+            self.robot = robot.Robot()
+        except AttributeError:
+            sleep(3)
+            self.robot = robot.Robot()
+        except:
+            print("Robot could not be connected - run your code again...")
+            return False
+        
         if conn_type.lower() == "sta":
             connection = "sta"
         elif conn_type.lower() == "station":
@@ -56,6 +64,7 @@ class RoboMaster:
         self.setRobotMode("chassis")
 
     def close(self) -> None:
+        self.stop()
         if self.cam.streaming:
             self.cam.stop()
         self.robot.close()
@@ -235,7 +244,9 @@ class RoboMaster:
         Stop the chassis from moving
         """
         self.robot.chassis.drive_speed(0, 0, 0)
+        sleep(0.1)
         self.robot.chassis.drive_wheels(0, 0, 0, 0)
+        sleep(0.1)
 
     def stopAfter(self, duration: float = 1.0, blocking: bool = False):
         """

@@ -396,8 +396,9 @@ class Camera:
             info(dict): The information of the detected object
             """
             if self.atMarker:
+                self.stopDetect()
                 self.robomaster.stop()
-                return
+                return True
             
             if not info == []:
                 for marker in info:
