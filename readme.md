@@ -4,6 +4,11 @@ Student-first wrapper for the DJI RoboMaster EP Python SDK.
 
 The design goal is the same one shown in [test.py](test.py): students should be able to write robot behavior as a sequence of clear intentions such as `move`, `detect`, `grab`, and `close` without learning the SDK transport layer first. Grouped subsystems like `robot.cam`, `robot.arm`, and `robot.gun` mirror the physical robot and keep the first classroom exercise short.
 
+## Project links
+
+- PyPI package: [robowrap on PyPI](https://pypi.org/project/robowrap/)
+- Original SDK: [DJI RoboMaster SDK](https://github.com/dji-sdk/RoboMaster-SDK)
+
 ## Python support
 
 The upstream RoboMaster SDK still targets older Python releases. Use **Python 3.7** or **Python 3.8** for real robot control.
@@ -14,6 +19,14 @@ The upstream RoboMaster SDK still targets older Python releases. Use **Python 3.
 python3.8 -m pip install --upgrade pip
 python3.8 -m pip install opencv-python simple_pid robomaster --user
 python3.8 -m pip install robowrap --user
+```
+
+To build and publish a new release:
+
+```sh
+python3 -m pip install --upgrade build twine
+python3 -m build
+python3 -m twine upload dist/*
 ```
 
 ## Snake_case policy
