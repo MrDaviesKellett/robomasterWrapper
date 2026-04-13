@@ -16,8 +16,9 @@ def create_sdk_robot() -> Any:
     """Create a RoboMaster EP SDK robot instance."""
     if sdk_robot is None:
         raise ImportError(
-            "The DJI RoboMaster SDK is not installed. Install 'robomaster' or inject a "
-            "fake robot object when testing."
+            "The RoboMaster SDK is not installed. Install 'robomaster-sdk-modern' "
+            "(recommended) or the legacy 'robomaster' package, or inject a fake robot "
+            "object when testing."
         )
     return sdk_robot.Robot()
 

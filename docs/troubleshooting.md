@@ -11,8 +11,13 @@
 
 ### The script hangs during startup
 
-- The upstream SDK can take a few seconds to initialize.
+- The RoboMaster SDK can take a few seconds to initialize.
 - Recovery: disconnect and reconnect the control link, then rerun with only one controller script active.
+
+### `No module named 'robomaster'`
+
+- robowrap expects the RoboMaster SDK Python module to be installed.
+- Recovery: install the maintained package with `python -m pip install robomaster-sdk-modern`.
 
 ## Camera problems
 
@@ -29,7 +34,7 @@
 
 ### Audio stream fails
 
-- Audio capture depends on the upstream EP media stream support.
+- Audio capture depends on the EP media stream support in the installed SDK.
 - Recovery: stop video and audio streams, then start only the audio stream once.
 
 ## Vision problems

@@ -4,21 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robowrap"
-version = "0.8.0"
+version = "0.8.2"
 description = "A student-first wrapper around the DJI RoboMaster EP Python SDK."
 readme = "readme.md"
-requires-python = ">=3.7, <3.9"
+requires-python = ">=3.9"
 authors = [
   { name = "Martin Davies", email = "mdavies@kellettschool.com" },
 ]
 dependencies = [
-  "robomaster",
+  "robomaster-sdk-modern>=0.1.1.69",
   "simple_pid",
-  "opencv-python==4.2.0.34; platform_system == 'Windows'",
-  "opencv-python; platform_system != 'Windows'",
+  "opencv-python",
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
@@ -27,6 +28,8 @@ classifiers = [
 Homepage = "https://pypi.org/project/robowrap/"
 Repository = "https://github.com/MrDaviesKellett/robomasterWrapper"
 PyPI = "https://pypi.org/project/robowrap/"
+"Modern RoboMaster SDK" = "https://pypi.org/project/robomaster-sdk-modern/"
+"Modern RoboMaster SDK Repository" = "https://github.com/MrDaviesKellett/RoboMaster-SDK"
 "Original RoboMaster SDK" = "https://github.com/dji-sdk/RoboMaster-SDK"
 
 [project.optional-dependencies]

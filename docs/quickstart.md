@@ -15,8 +15,10 @@ As coverage expands, the same rule applies everywhere in robowrap:
 ## First robot interaction
 
 1. Power on the RoboMaster EP and connect it in `device` or `usb` mode.
-2. Install Python 3.8 and the upstream RoboMaster SDK.
+2. Install a modern Python version such as Python 3.14 and install `robomaster-sdk-modern` with `robowrap`.
 3. Run the example below.
+
+The original DJI RoboMaster SDK appears to be abandoned and is tied to older Python releases. robowrap now uses the maintained `robomaster-sdk-modern` package so classroom setups can stay on current Python versions.
 
 ```python
 from time import sleep

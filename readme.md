@@ -1,32 +1,37 @@
 # robowrap
 
-Student-first wrapper for the DJI RoboMaster EP Python SDK.
+Student-first wrapper for the RoboMaster EP Python SDK.
 
 The design goal is the same one shown in [test.py](test.py): students should be able to write robot behavior as a sequence of clear intentions such as `move`, `detect`, `grab`, and `close` without learning the SDK transport layer first. Grouped subsystems like `robot.cam`, `robot.arm`, and `robot.gun` mirror the physical robot and keep the first classroom exercise short.
 
 ## Project links
 
 - PyPI package: [robowrap on PyPI](https://pypi.org/project/robowrap/)
+- Modern SDK package: [robomaster-sdk-modern on PyPI](https://pypi.org/project/robomaster-sdk-modern/)
+- Modern SDK repository: [RoboMaster-SDK (maintained fork)](https://github.com/MrDaviesKellett/RoboMaster-SDK)
 - Original SDK: [DJI RoboMaster SDK](https://github.com/dji-sdk/RoboMaster-SDK)
 
 ## Python support
 
-The upstream RoboMaster SDK still targets older Python releases. Use **Python 3.7** or **Python 3.8** for real robot control.
+robowrap now supports modern Python and is packaged for **Python 3.9+**, including **Python 3.14+**.
+
+This change was made because the original DJI RoboMaster SDK appears to be unmaintained and still targets older Python releases. To keep the RoboMaster EP usable on current Python versions, robowrap now depends on the maintained [`robomaster-sdk-modern`](https://pypi.org/project/robomaster-sdk-modern/) package instead.
 
 ## Installation
 
 ```sh
-python3.8 -m pip install --upgrade pip
-python3.8 -m pip install opencv-python simple_pid robomaster --user
-python3.8 -m pip install robowrap --user
+python -m pip install --upgrade pip
+python -m pip install robomaster-sdk-modern robowrap
 ```
+
+`robowrap` depends on `robomaster-sdk-modern`, so installing `robowrap` is usually enough. Installing both explicitly makes the SDK choice clear.
 
 To build and publish a new release:
 
 ```sh
-python3 -m pip install --upgrade build twine
-python3 -m build
-python3 -m twine upload dist/*
+python -m pip install --upgrade build twine
+python -m build
+python -m twine upload dist/*
 ```
 
 ## Snake_case policy
