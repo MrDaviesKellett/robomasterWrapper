@@ -57,6 +57,7 @@ robot.close()
 
 ## Next steps
 
+- Build confidence with [student_guide.md](student_guide.md)
 - Learn the full surface in [api_reference.md](api_reference.md)
 - Check old-to-new naming in [migration_snake_case.md](migration_snake_case.md)
 - Use [troubleshooting.md](troubleshooting.md) if connection, stream, or vision setup fails

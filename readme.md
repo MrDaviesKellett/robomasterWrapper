@@ -24,6 +24,7 @@ python3.8 -m pip install robowrap --user
 
 ## Start here
 
+- [Student guide](docs/student_guide.md)
 - [Quickstart](docs/quickstart.md)
 - [API reference](docs/api_reference.md)
 - [Coverage matrix](docs/coverage_matrix.md)
