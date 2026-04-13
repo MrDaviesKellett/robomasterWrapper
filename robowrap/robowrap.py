@@ -1,428 +1,265 @@
-from robomaster import robot
-from robomaster import led
-from robomaster.action import Action
-from .helperFuncs import clamp
-from typing import Union
-from time import sleep
-from threading import Timer
+from __future__ import annotations
+
 from math import pi
-from .gun import Gun
+from threading import Timer
+from time import sleep
+from typing import Any, Optional
+
+from ._sdk import LED_COMPONENTS, LED_EFFECTS, create_sdk_robot, normalize_robot_mode, resolve_robot_mode
 from .arm import Arm, Gripper
 from .camera import Camera
+from .gun import Gun
+from .helperFuncs import (
+    deprecated_alias,
+    ensure_choice,
+    ensure_int_range,
+    ensure_range,
+    wait_for_action,
+)
+from .modules import AiModule, Armor, Battery, Chassis, DistanceSensor, SensorAdaptor, Servo, Uart
 
-RADTODEG = 180 / pi
+RAD_TO_DEG = 180.0 / pi
 
 
 class RoboMaster:
-
-    # Initialisation and settings
-
     def __init__(
-        self, conn_type: str = "device", protocol: str = "tcp", serial: str = None
-    ):
-        """
-        Initialize the RoboMaster SDK.
-        Args:
-        conn_type (str, optional): Connection type. "device", "station" or "usb". Defaults to "device".
-        protocol (str, optional): Protocol. "tcp" or "udp". Defaults to "tcp".
-        serial (str, optional): Serial number of the RoboMaster device. Defaults to None.
-        """
-        self.robot = robot.Robot()
-        
-        if conn_type.lower() == "sta":
-            connection = "sta"
-        elif conn_type.lower() == "station":
-            connection = "sta"
-        elif conn_type.lower() == "ap":
-            connection = "ap"
-        elif conn_type.lower() == "device":
-            connection = "ap"
-        elif conn_type.lower() == "rndis":
-            connection = "rndis"
-        elif conn_type.lower() == "usb":
-            connection = "rndis"
-        else:
-            connection = "ap"
+        self,
+        conn_type: str = "device",
+        protocol: str = "tcp",
+        serial: Optional[str] = None,
+        *,
+        auto_reset: bool = True,
+        default_mode: str = "chassis",
+        _sdk_robot: Optional[Any] = None,
+        _sleep=sleep,
+    ) -> None:
+        self.sleep = _sleep
+        self.robot = _sdk_robot if _sdk_robot is not None else create_sdk_robot()
+        self._mode = "free"
 
-        # TODO: deal with station mode QR code generation and display (openCV?)
-        if connection == "sta":
-            pass
-                
-        try:
-            self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
-        except AttributeError:
-            sleep(3)
-            self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
-        except:
-            print("Robot could not be connected - run your code again...")
-            return False
+        connection = self._normalize_connection_type(conn_type)
+        ensure_choice("protocol", protocol.lower(), ("tcp", "udp"))
+        initialize_result = self.robot.initialize(conn_type=connection, proto_type=protocol.lower(), sn=serial)
+        if initialize_result is False:
+            raise RuntimeError("Robot could not be connected. Check power, network mode, and serial number.")
 
-        self.gun: Gun = Gun(self)
-        self.gripper: Gripper = Gripper(self)
-        self.arm: Arm = Arm(self)
-        self.cam: Camera = Camera(self)
+        self.chassis = Chassis(self)
+        self.gun = Gun(self)
+        self.gripper = Gripper(self)
+        self.arm = Arm(self)
+        self.arm.gripper = self.gripper
+        self.cam = Camera(self)
+        self.battery = Battery(self)
+        self.servo = Servo(self)
+        self.sensor = DistanceSensor(self)
+        self.sensor_adaptor = SensorAdaptor(self)
+        self.armor = Armor(self)
+        self.uart = Uart(self)
+        self.ai_module = AiModule(self)
 
-        self.reset()
-        self.setRobotMode("chassis")
-
-    def close(self) -> None:
-        self.stop()
-        if self.cam.streaming:
-            self.cam.stop()
-        self.robot.close()
+        if auto_reset:
+            self.reset()
+        self.set_robot_mode(default_mode)
 
     def __repr__(self) -> str:
-        """
-        Returns the RoboMaster's serial number.
-        Returns:
-        str: Serial number of the RoboMaster device.
-        """
-        return f"RoboMaster {self.robot.get_sn()}"
+        return f"RoboMaster {self.get_sn()}"
 
-    def getModule(self, module: str) -> object:
-        """
-        Get a module from the RoboMaster SDK.
-        Args:
-        module (str): Module name.
-        Returns:
-        object: The module.
-        """
-        if module.lower() == "battery":
-            return self.battery
-        elif module.lower() == "blaster":
-            return self.blaster
-        elif module.lower() == "camera":
-            return self.camera
-        elif module.lower() == "chassis":
-            return self.chassis
-        elif module.lower() == "gun":
-            return self.gun
-        elif module.lower() == "led":
-            return self.led
-        elif module.lower() == "robotic_arm":
-            return self.robotic_arm
-        elif module.lower() == "vision":
-            return self.vision
-        else:
-            raise ValueError(f"Invalid module name {module}")
+    def _normalize_connection_type(self, conn_type: str) -> str:
+        mapping = {
+            "sta": "sta",
+            "station": "sta",
+            "ap": "ap",
+            "device": "ap",
+            "rndis": "rndis",
+            "usb": "rndis",
+        }
+        return mapping.get(conn_type.lower(), "ap")
 
-    def setRobotMode(self, mode: str = "free"):
-        """
-        Set the robot mode.
-        Args:
-        mode (str, optional): Robot mode. free, chassis, gun. Defaults to "free".
-        """
-        if mode.lower() == "free":
-            self.mode = "free"
-            md = robot.FREE
-        elif mode.lower() == "chassis":
-            self.mode = "chassis"
-            md = robot.CHASSIS_LEAD
-        elif mode.lower() == "gun":
-            self.mode = "gun"
-            md = robot.GIMBAL_LEAD
-        else:
-            self.mode = "chassis"
-            md = robot.CHASSIS_LEAD
-        self.robot.set_robot_mode(md)
+    def _complete_action(self, action: Any, *, blocking: bool = True, timeout: Optional[float] = None) -> Any:
+        return wait_for_action(action, blocking=blocking, timeout=timeout)
 
-    def getRobotMode(self) -> str:
-        """
-        Get the robot mode.
-        Returns:
-        str: Robot mode. free, chassis, gun.
-        """
-        return self.mode
+    def close(self) -> Any:
+        self.stop()
+        self.cam.stop()
+        return self.robot.close()
 
-    def getSN(self) -> str:
-        """
-        Get the serial number of the RoboMaster device.
-        Returns:
-        str: The serial number.
-        """
+    def get_module(self, module: str) -> Any:
+        normalized = module.lower()
+        modules = {
+            "arm": self.arm,
+            "gripper": self.gripper,
+            "gun": self.gun,
+            "gimbal": self.gun,
+            "camera": self.cam,
+            "cam": self.cam,
+            "chassis": self.chassis,
+            "battery": self.battery,
+            "servo": self.servo,
+            "sensor": self.sensor,
+            "sensor_adaptor": self.sensor_adaptor,
+            "armor": self.armor,
+            "uart": self.uart,
+            "ai_module": self.ai_module,
+            "led": self.robot.led,
+            "vision": self.robot.vision,
+            "blaster": self.robot.blaster,
+            "dds": self.robot.dds,
+        }
+        if normalized not in modules:
+            raise ValueError(f"Unknown module '{module}'.")
+        return modules[normalized]
+
+    def set_robot_mode(self, mode: str = "free") -> Any:
+        ensure_choice("mode", mode.lower(), ("free", "chassis", "gun"))
+        self._mode = mode.lower()
+        return self.robot.set_robot_mode(resolve_robot_mode(mode))
+
+    def get_robot_mode(self) -> str:
+        getter = getattr(self.robot, "get_robot_mode", None)
+        if callable(getter):
+            mode = getter()
+            self._mode = normalize_robot_mode(mode)
+        return self._mode
+
+    def get_sn(self) -> str:
         return self.robot.get_sn()
 
-    def getVersion(self) -> str:
-        """
-        Get the version of the RoboMaster device.
-        Returns:
-        str: The version.
-        """
+    def get_version(self) -> str:
         return self.robot.get_version()
 
-    def reset(self) -> None:
-        """
-        Reset the RoboMaster device.
-        """
-        self.robot.reset()
-        sleep(1)
+    def reset(self) -> Any:
+        return self.robot.reset()
 
-    # Audio
+    def play_audio(self, path: str, *, blocking: bool = False, timeout: Optional[float] = None) -> Any:
+        action = self.robot.play_audio(path)
+        return self._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def playAudio(self, path: str, blocking: bool = False, timeout=None) -> Action:
-        """
-        Play an audio file.
-        Args:
-        path (str): Path to the audio file.
-        """
-        print(f"Playing audio: {path}")
-        if not blocking:
-            return self.robot.play_audio(path)
-        else:
-            return self.robot.play_audio(path).wait_for_completed(timeout)
+    def play_sound(
+        self,
+        sound_id: int,
+        *,
+        times: int = 1,
+        blocking: bool = False,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_int_range("times", times, 1, 10)
+        action = self.robot.play_sound(sound_id, times=times)
+        return self._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def playSound(self, soundID: int, blocking: bool = False, timeout=None) -> Action:
-        """
-        Play a sound.
-        Args:
-        sound (str): Sound name.
-        """
-        print(f"Playing sound: {soundID}")
-        if not blocking:
-            return self.robot.play_sound(soundID)
-        else:
-            return self.robot.play_sound(soundID).wait_for_completed(timeout)
-
-    # LEDs
-
-    def setLEDs(
+    def set_leds(
         self,
         r: int = 0,
         g: int = 0,
         b: int = 0,
+        *,
         leds: str = "all",
         effect: str = "on",
-    ):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        leds (str): LED component. front, back, left, right, gun, gunLeft, gunRight, all. Defaults to "all".
-        effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
-        """
+    ) -> Any:
+        ensure_int_range("r", r, 0, 255)
+        ensure_int_range("g", g, 0, 255)
+        ensure_int_range("b", b, 0, 255)
+        ensure_choice("leds", leds, tuple(LED_COMPONENTS))
+        ensure_choice("effect", effect, tuple(LED_EFFECTS))
+        return self.robot.led.set_led(
+            comp=LED_COMPONENTS[leds],
+            r=r,
+            g=g,
+            b=b,
+            effect=LED_EFFECTS[effect],
+        )
 
-        if leds == "front":
-            comp = led.COMP_BOTTOM_FRONT
-        elif leds == "back":
-            comp = led.COMP_BOTTOM_BACK
-        elif leds == "left":
-            comp = led.COMP_BOTTOM_LEFT
-        elif leds == "right":
-            comp = led.COMP_BOTTOM_RIGHT
-        elif leds == "gun":
-            comp = led.COMP_TOP_ALL
-        elif leds == "gunLeft":
-            comp = led.COMP_TOP_LEFT
-        elif leds == "gunRight":
-            comp = led.COMP_TOP_RIGHT
-        elif leds == "all":
-            comp = led.COMP_ALL
-        else:
-            comp = led.COMP_ALL
+    def stop(self) -> Any:
+        self.robot.chassis.drive_speed(0.0, 0.0, 0.0)
+        return self.robot.chassis.drive_wheels(0, 0, 0, 0)
 
-        if effect == "on":
-            effect = led.EFFECT_ON
-        elif effect == "off":
-            effect = led.EFFECT_OFF
-        elif effect == "pulse":
-            effect = led.EFFECT_PULSE
-        elif effect == "flash":
-            effect = led.EFFECT_FLASH
-        elif effect == "breath":
-            effect = led.EFFECT_BREATH
-        elif effect == "scrolling":
-            effect = led.EFFECT_SCROLLING
-        else:
-            effect = led.EFFECT_ON
-
-        self.robot.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
-
-    # Chassis
-
-    def stop(self) -> None:
-        """
-        Stop the chassis from moving
-        """
-        self.robot.chassis.drive_speed(0, 0, 0)
-        sleep(0.1)
-        self.robot.chassis.drive_wheels(0, 0, 0, 0)
-        sleep(0.1)
-
-    def stopAfter(self, duration: float = 1.0, blocking: bool = False):
-        """
-        wait for a certain period of time and then stop the robot.
-        Args:
-        duration (float): Duration to wait in seconds. Defaults to 1.0.
-        blocking (bool): Whether to block until the action is completed. Defaults to False.
-        """
-
-        if not blocking:
-            stop_thread = Timer(duration, self.stop, args=())
-            stop_thread.start()
-        else:
-            sleep(duration)
+    def stop_after(self, duration: float = 1.0, *, blocking: bool = False) -> Optional[Timer]:
+        ensure_range("duration", duration, 0.0, 600.0, unit="seconds")
+        if blocking:
+            self.sleep(duration)
             self.stop()
+            return None
+        timer = Timer(duration, self.stop)
+        timer.start()
+        return timer
 
-    def setSpeed(
+    def set_speed(
         self,
         x: float = 0.0,
         y: float = 0.0,
         z: float = 0.0,
-        timeout: Union[int, None] = None,
-    ) -> None:
-        """
-        Set the chassis speed in m/s - max speed 3.5m/s.
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
-        Positive values move forward, negative values move backward.
-        Positive degrees turn left, negative degrees turn right.
-        Args:
-        x (float): Speed in x axis (m/s). Defaults to 0.0.
-        y (float): Speed in y axis (m/s). Defaults to 0.0.
-        z (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        timeout (int): Timeout for the action. Defaults to None.
-        """
-        if -3.5 > x > 3.5:
-            print("X speed is out of range.")
-            print("X requires a value between -3.5 and 3.5")
-            print("Limiting X to +-3.5")
-            x = clamp(x, -3.5, 3.5)
-        if -3.5 > y > 3.5:
-            print("Y speed is out of range.")
-            print("Y requires a value between -3.5 and 3.5")
-            print("Limiting Y to +-3.5")
-            y = clamp(y, -3.5, 3.5)
-        if -600 > z > 600:
-            print("Z speed is out of range.")
-            print("Z requires a value between -600 and 600")
-            print("Limiting Z to +-600")
-            z = clamp(z, -600, 600)
+        *,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("x", x, -3.5, 3.5, unit="m/s")
+        ensure_range("y", y, -3.5, 3.5, unit="m/s")
+        ensure_range("z", z, -600.0, 600.0, unit="degrees/second")
+        if timeout is not None:
+            ensure_range("timeout", timeout, 0.0, 600.0, unit="seconds")
+        return self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
 
-        self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
+    def rotate(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
+        return self.set_speed(z=angular_velocity, timeout=timeout)
 
-    def rotate(
-        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
-        Positive degrees rotate left, negative degrees rotate right.
-        Args:
-        angularVelocity (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        timeout (int): Timeout for the action. Defaults to None.
-        """
-        self.setSpeed(z=angularVelocity, timeout=timeout)
+    def rotate_left(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
+        return self.rotate(angular_velocity=abs(angular_velocity), timeout=timeout)
 
-    def rotateLeft(
-        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
-        Positive degrees rotate left, negative degrees rotate right.
-        Args:
-        angularVelocity (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        timeout (int): Timeout for the action. Defaults to None.
-        """
-        self.rotate(angularVelocity=angularVelocity, timeout=timeout)
-
-    def rotateRight(
-        self, angularVelocity: float = 0.0, timeout: Union[int, None] = None
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
-        Positive degrees rotate right, negative degrees rotate left.
-        Args:
-        angularVelocity (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        timeout (int): Timeout for the action. Defaults to None.
-        """
-        self.rotate(angularVelocity=-angularVelocity, timeout=timeout)
+    def rotate_right(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
+        return self.rotate(angular_velocity=-abs(angular_velocity), timeout=timeout)
 
     def turn(
-        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s (1.6 rotations/s).
-        Positive degrees turn left, negative degrees turn right.
-        Args:
-        angle (float): Rotation amount about the z axis (°). Defaults to 0.0.
-        speed (float): Speed of rotation in °/s. Defaults to 90.0.
-        blocking (bool): Whether the action should block until complete or not. Defaults to True.
-        """
-        if not blocking:
-            self.robot.chassis.move(z=angle, z_speed=speed)
-        else:
-            self.robot.chassis.move(z=angle, z_speed=speed).wait_for_completed()
-
-    def turnLeft(
-        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
-        Positive degrees turn left, negative degrees turn right.
-        Args:
-        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        speed (float): Speed of rotation in °/s. Defaults to 90.0.
-        blocking (bool): Whether the action should block until complete or not. Defaults to True.
-        """
-        self.turn(angle=angle, speed=speed, blocking=blocking)
-
-    def turnRight(
-        self, angle: float = 0.0, speed: float = 90.0, blocking: bool = True
-    ) -> None:
-        """
-        Rotate the chassis about the Z axis in °/s - max speed 600°/s  (1.6 rotations/s).
-        Positive degrees turn right, negative degrees turn left.
-        Args:
-        angle (float): Rotation Speed about the z axis (°/s). Defaults to 0.0.
-        speed (float): Speed of rotation in °/s. Defaults to 90.0.
-        blocking (bool): Whether the action should block until complete or not. Defaults to True.
-        """
-        self.turn(angle=-angle, speed=speed, blocking=blocking)
-
-    def setWheelRPMs(
         self,
-        frontRight: int = 0,
-        frontLeft: int = 0,
-        backRight: int = 0,
-        backLeft: int = 0,
-        timeout: Union[int, None] = None,
-    ) -> None:
-        """
-        Set the chassis wheels in Revolutions Per Minute (RPMs).
-        Maximum speed is 1000 RPMs (16.6 rotations/s) (approx 3.5m/s).
-        Positive values rotate the wheels clockwise, negative values counterclockwise.
-        Therefore positive values move forward, negative values move backward.
-        Combinations of positive and negative values are possible, this will result in the chassis turning.
-        Args:
-        frontRight (int): Speed of the front right wheel (RPMs). Defaults to 0.
-        frontLeft (int): Speed of the front right wheel (RPMs). Defaults to 0.
-        backRight (int): Speed of the back right wheel (RPMs). Defaults to 0.
-        backLeft (int): Speed of the back left wheel (RPMs). Defaults to 0.
-        timeout (int): Timeout for the action (seconds). Defaults to None.
-        """
-        if -1000 > frontRight > 1000:
-            print("Front right wheel speed is out of range.")
-            print("Front right wheel requires a value between -1000 and 1000")
-            print("Limiting Front right wheel to +-1000")
-            frontRight = clamp(frontRight, -1000, 1000)
-        if -1000 > frontLeft > 1000:
-            print("Front left wheel speed is out of range.")
-            print("Front left wheel requires a value between -1000 and 1000")
-            print("Limiting Front left wheel to +-1000")
-            frontLeft = clamp(frontLeft, -1000, 1000)
-        if -1000 > backRight > 1000:
-            print("Back right wheel speed is out of range.")
-            print("Back right wheel requires a value between -1000 and 1000")
-            print("Limiting Back right wheel to +-1000")
-            backRight = clamp(backRight, -1000, 1000)
-        if -1000 > backLeft > 1000:
-            print("Back left wheel speed is out of range.")
-            print("Back left wheel requires a value between -1000 and 1000")
-            print("Limiting Back left wheel to +-1000")
-            backLeft = clamp(backLeft, -1000, 1000)
+        angle: float = 0.0,
+        *,
+        speed: float = 90.0,
+        blocking: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("angle", angle, -1800.0, 1800.0, unit="degrees")
+        ensure_range("speed", speed, 10.0, 540.0, unit="degrees/second")
+        action = self.robot.chassis.move(z=angle, z_speed=speed)
+        return self._complete_action(action, blocking=blocking, timeout=timeout)
 
-        self.robot.chassis.drive_wheels(
-            w1=frontRight, w2=frontLeft, w3=backRight, w4=backLeft, timeout=timeout
+    def turn_left(
+        self,
+        angle: float = 0.0,
+        *,
+        speed: float = 90.0,
+        blocking: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        return self.turn(angle=abs(angle), speed=speed, blocking=blocking, timeout=timeout)
+
+    def turn_right(
+        self,
+        angle: float = 0.0,
+        *,
+        speed: float = 90.0,
+        blocking: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        return self.turn(angle=-abs(angle), speed=speed, blocking=blocking, timeout=timeout)
+
+    def set_wheel_rpms(
+        self,
+        front_right: int = 0,
+        front_left: int = 0,
+        back_right: int = 0,
+        back_left: int = 0,
+        *,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_int_range("front_right", front_right, -1000, 1000, unit="rpm")
+        ensure_int_range("front_left", front_left, -1000, 1000, unit="rpm")
+        ensure_int_range("back_right", back_right, -1000, 1000, unit="rpm")
+        ensure_int_range("back_left", back_left, -1000, 1000, unit="rpm")
+        if timeout is not None:
+            ensure_range("timeout", timeout, 0.0, 600.0, unit="seconds")
+        return self.robot.chassis.drive_wheels(
+            w1=front_right,
+            w2=front_left,
+            w3=back_right,
+            w4=back_left,
+            timeout=timeout,
         )
 
     def move(
@@ -430,177 +267,107 @@ class RoboMaster:
         x: float = 0.0,
         y: float = 0.0,
         angle: float = 0.0,
-        speed: float = 1,
-        turnSpeed: float = 90,
+        *,
+        speed: float = 1.0,
+        turn_speed: float = 90.0,
         blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values in X move forward, negative values move backward.
-        Positive values in Y move left, negative values move right.
-        Positive values in Z rotate left, negative values rotate right.
-        Speed is in meters/second (m/s). default speed is 1 m/s.
-        Turning speed is in degrees/second (°/s). Default turning speed is 90°/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Turning speed must be within the range of 10 and 540°/s.
-        Args:
-        x (float): Distance to move in the x direction (meters). Defaults to 0.0.
-        y (float): Distance to move in the y direction (meters). Defaults to 0.0.
-        angle (float): Angle to rotate around the z axis (°). Defaults to 0.0.
-        speed (float): Speed of the chassis (m/s). Defaults to 1 m/s.
-        turnSpeed (float): Turning speed of the chassis (°/s). Defaults to 90°/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        if not blocking:
-            return self.robot.chassis.move(
-                x=x, y=y, z=angle, xy_speed=speed, z_speed=turnSpeed
-            )
-        else:
-            return self.robot.chassis.move(
-                x=x, y=y, z=angle, xy_speed=speed, z_speed=turnSpeed
-            ).wait_for_completed()
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("x", x, -5.0, 5.0, unit="m")
+        ensure_range("y", y, -5.0, 5.0, unit="m")
+        ensure_range("angle", angle, -1800.0, 1800.0, unit="degrees")
+        ensure_range("speed", speed, 0.5, 2.0, unit="m/s")
+        ensure_range("turn_speed", turn_speed, 10.0, 540.0, unit="degrees/second")
+        action = self.robot.chassis.move(x=x, y=y, z=angle, xy_speed=speed, z_speed=turn_speed)
+        return self._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def forward(
-        self,
-        distance: float = 0.5,
-        speed: float = 1,
-        blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values move forward, negative values move backward.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
-        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        if not blocking:
-            return self.robot.chassis.move(x=distance, xy_speed=speed)
-        else:
-            return self.robot.chassis.move(
-                x=distance, xy_speed=speed
-            ).wait_for_completed()
+    def forward(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+        return self.move(x=distance, speed=speed, blocking=blocking)
 
-    def back(
-        self,
-        distance: float = 0.5,
-        speed: float = 1,
-        blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values move backward, negative values move forward.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
-        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        self.forward(distance=-distance, speed=speed, blocking=blocking)
+    def back(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+        return self.move(x=-distance, speed=speed, blocking=blocking)
 
-    def backward(
-        self,
-        distance: float = 0.5,
-        speed: float = 1,
-        turnSpeed: float = 30,
-        blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values move backward, negative values move forward.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
-        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        self.back(distance=distance, speed=speed, blocking=blocking)
+    def backward(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+        return self.back(distance=distance, speed=speed, blocking=blocking)
 
-    def left(
-        self,
-        distance: float = 0.5,
-        speed: float = 1,
-        blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values move left, negative values move right.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
-        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        if not blocking:
-            return self.robot.chassis.move(y=-distance, xy_speed=speed)
-        else:
-            return self.robot.chassis.move(
-                y=-distance, xy_speed=speed
-            ).wait_for_completed()
+    def left(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+        return self.move(y=distance, speed=speed, blocking=blocking)
 
-    def right(
-        self,
-        distance: float = 0.5,
-        speed: float = 1,
-        blocking: bool = True,
-    ) -> Action:
-        """
-        Move the chassis a set distance in meters from its current position.
-        Positive values move right, negative values move left.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        distance (float): Distance to move in the x direction (meters). Defaults to 0.5.
-        speed (float): Speed of the chassis (m/s). Defaults to 0.5 m/s.
-        turnspeed (float): Turning speed of the chassis (°/s). Defaults to 30°/s.
-        blocking (bool): Block until action is complete. Defaults to False.
-        Returns:
-        Action: Action object that can be used to wait for completion or get feedback
-        """
-        self.left(distance=-distance, speed=speed, blocking=blocking)
+    def right(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+        return self.move(y=-distance, speed=speed, blocking=blocking)
 
     def circle(
         self,
         radius: float = 0.25,
         speed: float = 1.0,
-        numCircles: int = 1,
+        *,
+        num_circles: int = 1,
         blocking: bool = True,
-    ) -> None:
-        """
-        Circle the chassis a set distance in meters from its current position.
-        Speed is in meters/second (m/s). default speed is 0.5 m/s.
-        Maximum move distance is 5 meters.
-        Speed must be within the range of 0.5 and 2.0 m/s.
-        Args:
-        radius (float): Distance to circle in the x direction (meters). Defaults to 0.25.
-        speed (float): Speed of the chassis (m/s). Defaults to 1.0 m/s.
-        numCircles (int): Number of circles to make. Defaults to 1.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        angle = speed / radius * RADTODEG
-        circumference = 2 * pi * radius
-        duration = circumference / speed
-        duration *= 1.5 # account for speed up and slow down
-        self.setSpeed(x=speed, z=angle)
-        self.stopAfter(duration=duration * numCircles, blocking=blocking)
+    ) -> Optional[Timer]:
+        ensure_range("radius", radius, 0.05, 5.0, unit="m")
+        ensure_range("speed", speed, 0.1, 2.0, unit="m/s")
+        ensure_int_range("num_circles", num_circles, 1, 100)
+        angular_velocity = speed / radius * RAD_TO_DEG
+        duration = (2 * pi * radius / speed) * 1.5 * num_circles
+        self.set_speed(x=speed, z=angular_velocity)
+        return self.stop_after(duration, blocking=blocking)
+
+    @deprecated_alias("get_module")
+    def getModule(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_robot_mode")
+    def setRobotMode(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("get_robot_mode")
+    def getRobotMode(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("get_sn")
+    def getSN(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("get_version")
+    def getVersion(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("play_audio")
+    def playAudio(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("play_sound")
+    def playSound(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_leds")
+    def setLEDs(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("stop_after")
+    def stopAfter(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_speed")
+    def setSpeed(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("rotate_left")
+    def rotateLeft(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("rotate_right")
+    def rotateRight(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("turn_left")
+    def turnLeft(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("turn_right")
+    def turnRight(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_wheel_rpms")
+    def setWheelRPMs(self, *args: Any, **kwargs: Any) -> Any:
+        return None

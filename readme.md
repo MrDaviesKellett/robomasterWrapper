@@ -1,33 +1,46 @@
 # robowrap
-__a wrapper for the DJI Robomaster library to make use of the library easier for secondary students__
 
-_Please note that this package requires an older version of python3, this is due to the [Robomaster SDK](https://github.com/dji-sdk/RoboMaster-SDK) not supporting Python 3.9 onwards yet._
+Student-first wrapper for the DJI RoboMaster EP Python SDK.
 
-Please use **Python 3.7** or **Python 3.8**
+The design goal is the same one shown in [test.py](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/test.py): students should be able to write robot behavior as a sequence of clear intentions such as `move`, `detect`, `grab`, and `close` without learning the SDK transport layer first. Grouped subsystems like `robot.cam`, `robot.arm`, and `robot.gun` mirror the physical robot and keep the first classroom exercise short.
+
+## Python support
+
+The upstream RoboMaster SDK still targets older Python releases. Use **Python 3.7** or **Python 3.8** for real robot control.
 
 ## Installation
 
- 1. Install [Python 3.8.2](https://www.python.org/downloads/release/python-382/)
- 2. update pip
- 3. install cv2
- 4. Run the following _pip_ command to install robowrap:
-
-2:
-``` sh
+```sh
 python3.8 -m pip install --upgrade pip
-```
-3:
-``` sh
-python3.8 -m pip install opencv-python
-```
-4:
-``` sh
+python3.8 -m pip install opencv-python simple_pid robomaster --user
 python3.8 -m pip install robowrap --user
 ```
 
-look at the [test.py](https://github.com/MrDaviesKellett/robomasterWrapper/blob/main/test.py) file to see how to use this wrapper.
+## Snake_case policy
 
-## still to do:
-- [ ] documentation
-- [x] camera
-- [x] line following
+- The public wrapper API is now `snake_case` only.
+- Legacy camelCase and mixed-case names still work for one transition release and emit `DeprecationWarning`.
+- Those aliases are scheduled for removal in `0.9.0`, not before `2026-09-01`.
+
+## Start here
+
+- [Quickstart](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/quickstart.md)
+- [API reference](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/api_reference.md)
+- [Coverage matrix](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/coverage_matrix.md)
+- [Snake case migration](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/migration_snake_case.md)
+- [Troubleshooting](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/troubleshooting.md)
+- [Contributor checklist](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/contributor_checklist.md)
+- [Changelog](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/CHANGELOG.md)
+
+## Example
+
+```python
+from robowrap import RoboMaster
+
+robot = RoboMaster()
+robot.set_leds(0, 128, 255)
+robot.forward(0.5)
+robot.cam.detect_person()
+robot.arm.move_to(x=0, z=50)
+robot.close()
+```

@@ -1,460 +1,373 @@
-import cv2
-from simple_pid import PID
+from __future__ import annotations
+
+from typing import Any, Callable, Optional
+
+try:  # pragma: no cover - optional dependency in local tests
+    import cv2
+except ImportError:  # pragma: no cover - optional dependency in local tests
+    cv2 = None
+
+try:  # pragma: no cover - optional dependency in local tests
+    from simple_pid import PID
+except ImportError:  # pragma: no cover - exercised in tests without the dependency
+    class PID:  # type: ignore[override]
+        def __init__(self, p: float, i: float, d: float, *, setpoint: float = 0.0, sample_time: float = 0.05) -> None:
+            self.Kp = p
+            self.Ki = i
+            self.Kd = d
+            self.setpoint = setpoint
+            self.sample_time = sample_time
+            self.output_limits = (None, None)
+
+        def __call__(self, measurement: float) -> float:
+            error = self.setpoint - measurement
+            output = self.Kp * error
+            lower, upper = self.output_limits
+            if lower is not None:
+                output = max(lower, output)
+            if upper is not None:
+                output = min(upper, output)
+            return output
+
+from .helperFuncs import (
+    deprecated_alias,
+    ensure_choice,
+    ensure_color,
+    ensure_range,
+)
 
 
 class Camera:
-    def __init__(self, robomaster) -> None:
+    def __init__(self, robomaster: Any) -> None:
         self.robomaster = robomaster
         self.robot = self.robomaster.robot
         self.camera = self.robot.camera
         self.vision = self.robot.vision
         self.streaming = False
+        self.audio_streaming = False
         self.detecting = False
-        self.detectMode = "line"
-        self.visionDebug = False
-        self.debugColor = (0, 255, 0)
+        self.detect_mode = "line"
+        self.vision_debug = False
+        self.debug_color = (0, 255, 0)
         self.resolution = "360p"
         self.width = 640
         self.height = 360
-        self.debugMode = False
-        self.__debugList = []
+        self.debug_mode: Any = False
         self.frequency = 30
-        self.followSpeed = 0.5
-        self.followDistance = 0.5
-        self.atMarker = False
-        self.pid = PID(-330, -0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
-        self.pid.output_limits = (
-            -self.followSpeed / 3.5 * 600,
-            self.followSpeed / 3.5 * 600,
-        )
+        self.follow_speed = 0.5
+        self.follow_distance = 0.5
+        self.at_marker = False
+        self._debug_items: list[dict[str, Any]] = []
+        self.pid = PID(-330, 0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
+        self.pid.output_limits = (-self.follow_speed / 3.5 * 600, self.follow_speed / 3.5 * 600)
 
-    # Camera Display
-    def setResolution(self, resolution: str = "360P") -> None:
-        """
-        Set the resolution of the camera stream
-        Args:
-        resolution(str, optional): The resolution to set. Defaults to "360P".
-        """
-        if not resolution in ["360p", "540p", "720p"]:
-            print("Invalid resolution")
-            print("Please choose from the following options:")
-            print("360p, 520p, 720p")
-        self.resolution = resolution.lower()
+    def _require_cv2(self) -> None:
+        if cv2 is None:
+            raise RuntimeError("OpenCV is required for Camera.view(). Install 'opencv-python'.")
+
+    def _update_resolution_dimensions(self) -> None:
         if self.resolution == "360p":
-            self.width = 640
-            self.height = 360
-        elif self.resolution == "520p":
-            self.width = 960
-            self.height = 540
-        elif self.resolution == "720p":
-            self.width = 1280
-            self.height = 720
+            self.width, self.height = 640, 360
+        elif self.resolution == "540p":
+            self.width, self.height = 960, 540
+        else:
+            self.width, self.height = 1280, 720
 
-    def stopDetect(self) -> None:
-        """
-        Stop the video stream
-        """
+    def set_resolution(self, resolution: str = "360p") -> None:
+        resolution = resolution.lower()
+        ensure_choice("resolution", resolution, ("360p", "540p", "720p"))
+        self.resolution = resolution
+        self._update_resolution_dimensions()
+
+    def start(self) -> Any:
+        if self.streaming:
+            return True
+        result = self.camera.start_video_stream(display=False, resolution=self.resolution)
+        self.streaming = bool(result is not False)
+        return result
+
+    def stop_detect(self) -> None:
         if self.detecting:
-            self.vision.unsub_detect_info(self.detectMode)
+            self.vision.unsub_detect_info(self.detect_mode)
             self.detecting = False
 
-    def stop(self) -> None:
-        """
-        Stop the video stream
-        """
-        self.stopDetect()
-        if self.streaming:
-            self.camera.stop_video_stream()
-            self.streaming = False
+    def stop(self) -> Any:
+        self.stop_detect()
+        if self.audio_streaming:
+            self.stop_audio_stream()
+        if not self.streaming:
+            return True
+        result = self.camera.stop_video_stream()
+        self.streaming = False
+        if cv2 is not None:
             cv2.destroyAllWindows()
+        return result
 
-    def start(self) -> None:
-        """
-        Start the video stream
-        """
-        if not self.streaming:
-            self.camera.start_video_stream(display=False, resolution=self.resolution)
-            self.streaming = True
-
-    def view(self) -> None:
-        """
-        View the video stream
-        """
+    def view(self) -> Any:
+        self._require_cv2()
         if not self.streaming:
             self.start()
-        try:
-            img = self.camera.read_cv2_image(strategy="newest")
-            while self.__debugList:
-                item = self.__debugList.pop()
-                if item["type"] == "box":
-                    cv2.rectangle(img, item["start"], item["end"], item["color"], 2)
-                if item["type"] == "point":
-                    cv2.circle(img, item["point"], 2, item["color"], -1)
-            cv2.imshow("Robot", img)
-            cv2.waitKey(1)
-        except:
-            return False
+        image = self.camera.read_cv2_image(strategy="newest")
+        if image is None:
+            return None
+        for item in self._debug_items:
+            if item["type"] == "box":
+                cv2.rectangle(image, item["start"], item["end"], item["color"], 2)
+            elif item["type"] == "point":
+                cv2.circle(image, item["point"], 2, item["color"], -1)
+        cv2.imshow("RoboMaster", image)
+        cv2.waitKey(1)
+        return image
 
-    # AI Vision
+    def set_pid(self, p: float = 330, i: float = 0, d: float = 28) -> None:
+        self.pid.Kp = -p
+        self.pid.Ki = -i
+        self.pid.Kd = -d
 
-    def setPID(self, P=330, I=0, D=28):
-        """
-        set the PID values
-        Args:
-        P(Int: optional): P = Proportional
-        I(Int: optional): I = Integral
-        D(Int: optional): D = Derivative
-        """
-        self.pid.Kp = -P
-        self.pid.Ki = -I
-        self.pid.Kd = -D
+    def set_detect_mode(self, mode: str = "line") -> None:
+        ensure_choice("mode", mode.lower(), ("person", "gesture", "line", "marker", "robot"))
+        self.detect_mode = mode.lower()
 
-    def setDetectMode(self, mode: str = "line") -> None:
-        """
-        Set the detection mode of the AI image recognition
-        Args:
-        mode(str, optional) choose from "person", "gesture", "line", "marker", "robot" Default to "line".
-        """
-        if not mode.lower() in ["person", "gesture", "line", "marker", "robot"]:
-            print("Invalid detect mode")
-            print("Please choose from the following options:")
-            print("Person, Gesture, Line, Marker, Robot")
-        self.detectMode = mode.lower()
+    def set_vision_debug(self, value: bool = True) -> None:
+        self.vision_debug = bool(value)
 
-    def setVisionDebug(self, value=True) -> None:
-        """
-        Set vision debugging on
-        """
-        self.visionDebug = value
+    def set_debug_color(self, color: tuple[int, int, int] = (255, 0, 0)) -> None:
+        self.debug_color = ensure_color("color", color)
 
-    def setDebugColor(self, color=(255, 0, 0)) -> None:
-        """
-        Set the vision debugging color
-        """
-        self.debugColor = color
+    def reset_vision(self) -> Any:
+        self.stop_detect()
+        self._debug_items = []
+        return self.vision.reset()
 
-    def __detectCallback(self, info) -> bool:
-        """
-        detect things in the video stream on device
-        Args:
-        info(dict): The information of the detected object
-        """
-        if not info:
-            return False
-        if self.detectMode == "person":
-            peopleList = []
-            for person in info:
-                if self.debugMode:
-                    print(
-                        f"person detected at x: {person[0]} y: {person[1]} w: {person[2]} h: {person[3]}"
-                    )
-                x = int(person[0] * self.width)
-                y = int(person[1] * self.height)
-                w = int(person[2] * self.width)
-                h = int(person[3] * self.height)
-                peopleList += [
-                    {
-                        "type": "box",
-                        "start": (x - w // 2, y - h // 2),
-                        "end": (x + w // 2, y + h // 2),
-                        "color": self.debugColor,
-                    }
-                ]
-            if self.visionDebug:
-                self.__debugList = peopleList
-        if self.detectMode == "gesture":
-            if self.debugMode:
-                gestureList = []
-                for gesture in info:
-                    if self.debugMode:
-                        print(
-                            f"gesture detected at x: {gesture[0]} y: {gesture[1]} w: {gesture[2]} h: {gesture[3]}"
-                        )
-                    x = int(gesture[0] * self.width)
-                    y = int(gesture[1] * self.height)
-                    w = int(gesture[2] * self.width)
-                    h = int(gesture[3] * self.height)
-                    gestureList += [
-                        {
-                            "type": "box",
-                            "start": (x - w // 2, y - h // 2),
-                            "end": (x + w // 2, y + h // 2),
-                            "color": self.debugColor,
-                        }
-                    ]
-            if self.visionDebug:
-                self.__debugList = gestureList
-        if self.detectMode == "line":
-            linetype = "none"
-            if info[0] == 1:
-                linetype = "straight"
-            if info[0] == 2:
-                linetype = "forked"
-            if info[0] == 3:
-                linetype = "crossing"
-            if self.debugMode:
-                print(f"\n{linetype} line detected")
-            pointList = []
-            for i, point in enumerate(info[1:]):
-                if self.debugMode == "verbose":
-                    print(
-                        f"Point {i+1:>2} - x: {point[0]:.2f} y: {point[1]:.2f} t: {point[2]:>6.2f} c: {point[3]:>5.2f}"
-                    )
-                x = int(point[0] * self.width)
-                y = int(point[1] * self.height)
-                t = int(point[2] * self.width)
-                c = int(point[3] * self.height)
-                pointList += [
-                    {"type": "point", "point": (x, y), "color": self.debugColor}
-                ]
-            if self.visionDebug:
-                self.__debugList = pointList
-        if self.detectMode == "marker":
-            markerList = []
-            for marker in info:
-                if self.debugMode:
-                    print(
-                        f"marker {marker[4]} detected at x: {marker[0]} y: {marker[1]} w: {marker[2]} h: {marker[3]}"
-                    )
-                x = int(marker[0] * self.width)
-                y = int(marker[1] * self.height)
-                w = int(marker[2] * self.width)
-                h = int(marker[3] * self.height)
-                markerList += [
-                    {
-                        "type": "box",
-                        "start": (x - w // 2, y - h // 2),
-                        "end": (x + w // 2, y + h // 2),
-                        "color": self.debugColor,
-                    }
-                ]
-            if self.visionDebug:
-                self.__debugList = markerList
-        if self.detectMode == "robot":
-            robotList = []
-            for robot in info:
-                if self.debugMode:
-                    print(
-                        f"robot detected at x: {robot[0]} y: {robot[1]} w: {robot[2]} h: {robot[3]}"
-                    )
-                x = int(robot[0] * self.width)
-                y = int(robot[1] * self.height)
-                w = int(robot[2] * self.width)
-                h = int(robot[3] * self.height)
-                robotList += [
-                    {
-                        "type": "box",
-                        "start": (x - w // 2, y - h // 2),
-                        "end": (x + w // 2, y + h // 2),
-                        "color": self.debugColor,
-                    }
-                ]
-            if self.visionDebug:
-                self.__debugList = robotList
-
-    def detect(self, name=None, color=None) -> None:
-        """
-        Detect an object of type name and of a particular color
-        Args:
-        name(str or None, optional) the type of detection from "person", "gesture", "line", "marker", "robot" Default to "line".
-        color(str or None, optional) the color of detected objects, can be "red", "green", "blue"
-        """
-        if name is None:
-            name = self.detectMode
-        if not self.streaming:
-            self.start()
-        self.detectMode = name
-        if not self.detecting:
-            self.vision.sub_detect_info(name, color, self.__detectCallback)
-            self.detecting = True
-
-    def detectPerson(self) -> None:
-        """
-        Detect a person
-        """
-        self.detect("person")
-
-    def detectGesture(self) -> None:
-        """
-        Detect Gestures
-        """
-        self.detect("gesture")
-
-    def detectLine(self, color="red") -> None:
-        """
-        Detect a line (red, green or blue)
-        Args:
-        color(str, optional): "red", "green" or "blue", Default to "red"
-        """
-        self.detect("line", color)
-
-    def detectMarker(self, color="red") -> None:
-        """
-        Detect a marker (red, green or blue)
-        Args:
-        color(str, optional): "red", "green" or "blue", Default to "red"
-        """
-        self.detect("marker", color)
-
-    def detectRobot(self) -> None:
-        """
-        Detect another robomaster robot
-        """
-        self.detect("robot")
-
-    def setFollowSpeed(self, speed):
-        """
-        Set the follwowing speed
-        """
-        self.followSpeed = speed
-
-    def setFollowDistance(self, distance):
-        """
-        Set the following distance
-        """
-        self.followDistance = distance
-
-    def __lookatCallback(self, info):
-        """
-        Detect and look at things in the video stream on device
-        Args:
-        info(dict): The information of the detected object
-        """
-        self.__detectCallback(info)
-
-    def __followCallback(self, info):
-        """
-        Detect and follow things in the video stream on device
-        Args:
-        info(dict): The information of the detected object
-        """
-        self.__detectCallback(info)
-        if self.detectMode == "line":
-            if info == [0]:
-                self.robomaster.setSpeed(0, 0, 0)
-                return False
-            followPoint = 5
-            angle = info[followPoint + 1][2]
-            val = self.pid(angle)
-            if self.debugMode:
-                print(
-                    f"following point {followPoint} tangent angle is {angle}, pid is {val}"
-                )
-            self.robomaster.setSpeed(x=self.followSpeed, z=val)
-        if self.detectMode == "marker":
-            if info == [0]:
-                self.robomaster.setSpeed(0, 0, 0)
-                return False
-            # TODO: follow markers maintaining a specific distance
-
-    def follow(self, name=None, color="red"):
-        """
-        Detect and follow an object of type name and of a particular color
-        Args:
-        name(str or None, optional) the type of detection from "person", "gesture", "line", "marker", "robot" Default to "line".
-        color(str or None, optional) the color of detected objects, can be "red", "green", "blue"
-        """
-        if name is None:
-            name = self.detectMode
-        if not self.streaming:
-            self.start()
-        self.detectMode = name
-        if not self.detecting:
-            self.vision.sub_detect_info(name, color, self.__followCallback)
-            self.detecting = True
-
-    def followLine(self, color="red"):
-        """
-        Detect and follow a line (red, green or blue)
-        Args:
-        color(str, optional): "red", "green" or "blue", Default to "red"
-        """
-        self.follow("line", color)
-
-    def moveToMarker(self, markerType="1", color="red", error=0.06, speed=1, minSpeed = 0.02, targetX = 0, targetY = 0.5):
-        """
-        Detect and move in front of a marker (red, green or blue)
-        Args:
-        markerType(str, optional): the type of marker to follow, Default to "0"
-        color(str, optional): "red", "green" or "blue", Default to "red"
-        error(float, optional): the error margin for the detection, Default to 0.03
-        speed(float, optional): the speed of the robot in m/s, Default to 0.5 m/s
-        minSpeed(float, optional): the minimum speed in m/s the robot should move, Default 0.02 m/s
-        targetX(float, optional): the target position of the marker on the camera view in x -1 is the left of the view 1 is the right of the view
-        targetY(float, optional): the garget position of the marker on the camera view in y -1 is the top of the view 1 is the bottom of the view
-        """
-
-        if type(markerType) is not str:
-            try:
-                markerType = str(markerType)
-            except ValueError:
-                raise TypeError("markerType must be a string")
-            
-        self.atMarker = False
-
-        def _moveToMarkerCallback(info):
-            """
-            Detect and move to a marker (red, green or blue)
-            Args:
-            info(dict): The information of the detected object
-            """
-            if self.atMarker:
-                self.stopDetect()
-                self.robomaster.stop()
-                return True
-            
-            if not info == []:
-                for marker in info:
-                    x = 0
-                    y = 0
-                    if marker[4] == markerType:
-
-                        x = marker[0]  # range of 0 to 1
-                        y = marker[1]  # range of 0 to 1
-
-                        # map x into -1 to 1 (for left and right movement of the robot)
-                        x = x * 2 - 1
-                        y = y * 2 - 1
-
-                        if self.debugMode == "verbose":
-                            print(
-                                f"marker {marker[4]} detected at x: {x:.3f} y: {y:.3f} w: {marker[2]:.3f} h: {marker[3]:.3f}"
-                            )
-                        
-                        if x < targetX - error or x > targetX + error:
-                            xMove = (x - targetX) * speed
-                            if abs(xMove) < minSpeed:
-                                if x > 1:
-                                    xMove = minSpeed
-                                else:
-                                    xMove = -minSpeed
-                            self.robomaster.setSpeed(0, xMove, 0)  # move left/right
-                        elif y < targetY - error or y > targetY + error:
-                            yMove = (y - targetY) * speed
-                            if abs(yMove) < minSpeed:
-                                if y > 1:
-                                    yMove = minSpeed
-                                else:
-                                    yMove = -minSpeed
-                            self.robomaster.setSpeed(-yMove, 0, 0)  # just move forward..
-                        if targetY - error < y < targetY + error and targetX - error < x < targetX + error:
-                            if self.debugMode == "verbose":
-                                print("arrived at Marker")
-                            self.robomaster.stop()
-                            self.stopDetect()
-                            self.atMarker = True
-                            return True
-            else:
-                if self.debugMode == "verbose":
-                    print("no marker found!")
-                #self.robomaster.stop()           
-            return False
-
-        if not self.streaming:
-            self.start()
-        self.detectMode = "marker"
-        if not self.detecting:
-            self.detecting = True
-            self.vision.sub_detect_info(
-                self.detectMode, color, _moveToMarkerCallback
+    def _store_boxes(self, items: list[list[Any]]) -> None:
+        boxes: list[dict[str, Any]] = []
+        for item in items:
+            x = int(item[0] * self.width)
+            y = int(item[1] * self.height)
+            w = int(item[2] * self.width)
+            h = int(item[3] * self.height)
+            boxes.append(
+                {
+                    "type": "box",
+                    "start": (x - w // 2, y - h // 2),
+                    "end": (x + w // 2, y + h // 2),
+                    "color": self.debug_color,
+                }
             )
+        self._debug_items = boxes
+
+    def _store_line(self, info: list[Any]) -> None:
+        points: list[dict[str, Any]] = []
+        for point in info[1:]:
+            x = int(point[0] * self.width)
+            y = int(point[1] * self.height)
+            points.append({"type": "point", "point": (x, y), "color": self.debug_color})
+        self._debug_items = points
+
+    def _detect_callback(self, info: Any) -> bool:
+        if not info:
+            self._debug_items = []
+            return False
+        if self.detect_mode in {"person", "gesture", "marker", "robot"}:
+            self._store_boxes(info)
+        elif self.detect_mode == "line":
+            self._store_line(info)
+        return True
+
+    def _restart_detection(self, mode: str, callback: Callable[..., Any], color: Optional[str] = None) -> Any:
+        ensure_choice("mode", mode, ("person", "gesture", "line", "marker", "robot"))
+        if color is not None:
+            ensure_choice("color", color, ("red", "green", "blue"))
+        if not self.streaming:
+            self.start()
+        if self.detecting:
+            self.stop_detect()
+        self.detect_mode = mode
+        result = self.vision.sub_detect_info(mode, color, callback)
+        self.detecting = bool(result is not False)
+        return result
+
+    def detect(self, name: Optional[str] = None, color: Optional[str] = None) -> Any:
+        mode = self.detect_mode if name is None else name.lower()
+        return self._restart_detection(mode, self._detect_callback, color=color)
+
+    def detect_person(self) -> Any:
+        return self.detect("person")
+
+    def detect_gesture(self) -> Any:
+        return self.detect("gesture")
+
+    def detect_line(self, color: str = "red") -> Any:
+        return self.detect("line", color=color)
+
+    def detect_marker(self, color: str = "red") -> Any:
+        return self.detect("marker", color=color)
+
+    def detect_robot(self) -> Any:
+        return self.detect("robot")
+
+    def set_follow_speed(self, speed: float) -> None:
+        ensure_range("speed", speed, 0.05, 3.5, unit="m/s")
+        self.follow_speed = speed
+        self.pid.output_limits = (-self.follow_speed / 3.5 * 600, self.follow_speed / 3.5 * 600)
+
+    def set_follow_distance(self, distance: float) -> None:
+        ensure_range("distance", distance, 0.0, 1.0)
+        self.follow_distance = distance
+
+    def _follow_callback(self, info: Any) -> bool:
+        self._detect_callback(info)
+        if self.detect_mode != "line":
+            return False
+        if info == [0] or not info:
+            self.robomaster.stop()
+            return False
+        follow_point = min(5, len(info) - 2)
+        tangent_angle = info[follow_point + 1][2]
+        turn_speed = self.pid(tangent_angle)
+        self.robomaster.set_speed(x=self.follow_speed, z=turn_speed)
+        return True
+
+    def follow(self, name: Optional[str] = None, color: str = "red") -> Any:
+        mode = self.detect_mode if name is None else name.lower()
+        if mode != "line":
+            raise NotImplementedError("Only line following is implemented in the student wrapper.")
+        return self._restart_detection(mode, self._follow_callback, color=color)
+
+    def follow_line(self, color: str = "red") -> Any:
+        return self.follow("line", color=color)
+
+    def move_to_marker(
+        self,
+        marker_type: str = "1",
+        *,
+        color: str = "red",
+        error: float = 0.06,
+        speed: float = 1.0,
+        min_speed: float = 0.02,
+        target_x: float = 0.0,
+        target_y: float = 0.5,
+    ) -> Any:
+        ensure_choice("color", color, ("red", "green", "blue"))
+        ensure_range("error", error, 0.0, 1.0)
+        ensure_range("speed", speed, 0.05, 3.5, unit="m/s")
+        ensure_range("min_speed", min_speed, 0.0, 1.0, unit="m/s")
+        ensure_range("target_x", target_x, -1.0, 1.0)
+        ensure_range("target_y", target_y, -1.0, 1.0)
+        marker_type = str(marker_type)
+        self.at_marker = False
+
+        def _callback(info: Any) -> bool:
+            self._detect_callback(info)
+            if not info:
+                return False
+            for marker in info:
+                if str(marker[4]) != marker_type:
+                    continue
+                x = marker[0] * 2 - 1
+                y = marker[1] * 2 - 1
+                if abs(x - target_x) > error:
+                    lateral = (x - target_x) * speed
+                    if 0 < abs(lateral) < min_speed:
+                        lateral = min_speed if lateral > 0 else -min_speed
+                    self.robomaster.set_speed(y=lateral)
+                    return False
+                if abs(y - target_y) > error:
+                    forward = (target_y - y) * speed
+                    if 0 < abs(forward) < min_speed:
+                        forward = min_speed if forward > 0 else -min_speed
+                    self.robomaster.set_speed(x=forward)
+                    return False
+                self.robomaster.stop()
+                self.stop_detect()
+                self.at_marker = True
+                return True
+            return False
+
+        return self._restart_detection("marker", _callback, color=color)
+
+    def take_photo(self) -> Any:
+        return self.camera.take_photo()
+
+    def start_audio_stream(self) -> Any:
+        result = self.camera.start_audio_stream()
+        self.audio_streaming = bool(result is not False)
+        return result
+
+    def stop_audio_stream(self) -> Any:
+        result = self.camera.stop_audio_stream()
+        self.audio_streaming = False
+        return result
+
+    def read_audio_frame(self, timeout: float = 1.0) -> Any:
+        ensure_range("timeout", timeout, 0.01, 60.0, unit="seconds")
+        return self.camera.read_audio_frame(timeout=timeout)
+
+    def record_audio(self, save_file: str = "output.wav", seconds: float = 5.0, sample_rate: int = 48000) -> Any:
+        ensure_range("seconds", seconds, 0.1, 600.0, unit="seconds")
+        ensure_choice("sample_rate", sample_rate, (8000, 16000, 32000, 44100, 48000))
+        return self.camera.record_audio(save_file=save_file, seconds=seconds, sample_rate=sample_rate)
+
+    @deprecated_alias("set_resolution")
+    def setResolution(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("stop_detect")
+    def stopDetect(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_pid")
+    def setPID(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_detect_mode")
+    def setDetectMode(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_vision_debug")
+    def setVisionDebug(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_debug_color")
+    def setDebugColor(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("detect_person")
+    def detectPerson(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("detect_gesture")
+    def detectGesture(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("detect_line")
+    def detectLine(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("detect_marker")
+    def detectMarker(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("detect_robot")
+    def detectRobot(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_follow_speed")
+    def setFollowSpeed(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_follow_distance")
+    def setFollowDistance(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("follow_line")
+    def followLine(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("move_to_marker")
+    def moveToMarker(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("view")
+    def display(self, *args: Any, **kwargs: Any) -> Any:
+        return None

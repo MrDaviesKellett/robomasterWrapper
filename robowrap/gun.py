@@ -1,182 +1,131 @@
-from robomaster import led
-from robomaster.action import Action
+from __future__ import annotations
+
+from typing import Any, Callable, Optional
+
+from ._sdk import LED_COMPONENTS, LED_EFFECTS
+from .helperFuncs import deprecated_alias, ensure_choice, ensure_int_range, ensure_range
 
 
 class Gun:
-    def __init__(self, RoboMaster) -> None:
-        self.robomaster = RoboMaster
+    def __init__(self, robomaster: Any) -> None:
+        self.robomaster = robomaster
         self.robot = self.robomaster.robot
 
-    # LEDs
-
-    def setLEDs(
+    def set_leds(
         self,
         r: int = 0,
         g: int = 0,
         b: int = 0,
+        *,
         leds: str = "gun",
         effect: str = "on",
-    ):
-        """
-        Set the robot LEDs to a specific colour.
-        Args:
-        r(int): Red value.
-        g(int): Green value.
-        b(int): Blue value.
-        leds (str): LED component. front, back, left, right, gun, gunLeft, gunRight, all. Defaults to "all".
-        effect (str): LED effect. on, off, pulse, flash, breath, scrolling. Defaults to "on".
-        """
+    ) -> Any:
+        ensure_int_range("r", r, 0, 255)
+        ensure_int_range("g", g, 0, 255)
+        ensure_int_range("b", b, 0, 255)
+        ensure_choice("leds", leds, ("gun", "gun_left", "gun_right"))
+        ensure_choice("effect", effect, tuple(LED_EFFECTS))
+        return self.robot.led.set_led(
+            comp=LED_COMPONENTS[leds],
+            r=r,
+            g=g,
+            b=b,
+            effect=LED_EFFECTS[effect],
+        )
 
-        if leds == "gun":
-            comp = led.COMP_TOP_ALL
-        elif leds == "gunLeft":
-            comp = led.COMP_TOP_LEFT
-        elif leds == "gunRight":
-            comp = led.COMP_TOP_RIGHT
-        else:
-            comp = led.COMP_TOP_ALL
-
-        if effect == "on":
-            effect = led.EFFECT_ON
-        elif effect == "off":
-            effect = led.EFFECT_OFF
-        elif effect == "pulse":
-            effect = led.EFFECT_PULSE
-        elif effect == "flash":
-            effect = led.EFFECT_FLASH
-        elif effect == "breath":
-            effect = led.EFFECT_BREATH
-        elif effect == "scrolling":
-            effect = led.EFFECT_SCROLLING
-        else:
-            effect = led.EFFECT_ON
-
-        self.led.set_led(comp=comp, r=r, g=g, b=b, effect=effect)
-
-    # gun
-
-    def rotate(self, pitchSpeed: float = 0.0, yawSpeed: float = 0.0) -> None:
-        """
-        Rotate the gun at a set pitch and yaw speed.
-        Minimum Pitch speed is -360°/s, maximum pitch speed is +360°/s.
-        Minimum Yaw speed is -360°/s, maximum yaw speed is +360°/s.
-        Args:
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 0.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 0.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        self.robot.gimbal.drive_speed(pitch_speed=pitchSpeed, yaw_speed=yawSpeed)
+    def rotate(self, pitch_speed: float = 0.0, yaw_speed: float = 0.0) -> Any:
+        ensure_range("pitch_speed", pitch_speed, -360.0, 360.0, unit="degrees/second")
+        ensure_range("yaw_speed", yaw_speed, -360.0, 360.0, unit="degrees/second")
+        return self.robot.gimbal.drive_speed(pitch_speed=pitch_speed, yaw_speed=yaw_speed)
 
     def move(
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
-        pitchSpeed: float = 50.0,
-        yawSpeed: float = 50.0,
+        *,
+        pitch_speed: float = 50.0,
+        yaw_speed: float = 50.0,
         blocking: bool = True,
-    ) -> Action:
-        """
-        Move the gun to a set pitch and yaw position.
-        The Origin (starting point) is at the current position of the gun.
-        Minimum Pitch is -55° and Maximum Pitch is +55°.
-        Minimum Yaw is -55° and Maximum Yaw is +55°.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        Args:
-        pitch (float): Pitch position of the gun in degrees. Defaults to 0.0.
-        yaw (float): Yaw position of the gun in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 50.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 50.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robot.gimbal.move(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.move(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("pitch", pitch, -55.0, 55.0, unit="degrees")
+        ensure_range("yaw", yaw, -55.0, 55.0, unit="degrees")
+        ensure_range("pitch_speed", pitch_speed, 0.0, 540.0, unit="degrees/second")
+        ensure_range("yaw_speed", yaw_speed, 0.0, 540.0, unit="degrees/second")
+        action = self.robot.gimbal.move(
+            pitch=pitch,
+            yaw=yaw,
+            pitch_speed=pitch_speed,
+            yaw_speed=yaw_speed,
+        )
+        return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def moveto(
+    def move_to(
         self,
         pitch: float = 0.0,
         yaw: float = 0.0,
-        pitchSpeed: float = 50.0,
-        yawSpeed: float = 50.0,
+        *,
+        pitch_speed: float = 50.0,
+        yaw_speed: float = 50.0,
         blocking: bool = True,
-    ) -> Action:
-        """
-        Move the gun to a set pitch and yaw position.
-        The Origin (starting point) is the coordinate at initialisation (start up).
-        Minimum Pitch is -25° and Maximum Pitch is +30°.
-        Minimum Yaw is -250° and Maximum Yaw is +250°.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        Args:
-        pitch (float): Pitch position of the gun in degrees. Defaults to 0.0.
-        yaw (float): Yaw position of the gun in degrees. Defaults to 0.0.
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 50.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 50.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        if not blocking:
-            return self.robot.gimbal.moveto(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            )
-        else:
-            return self.robot.gimbal.moveto(
-                pitch=pitch, yaw=yaw, pitch_speed=pitchSpeed, yaw_speed=yawSpeed
-            ).wait_for_completed()
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("pitch", pitch, -25.0, 30.0, unit="degrees")
+        ensure_range("yaw", yaw, -250.0, 250.0, unit="degrees")
+        ensure_range("pitch_speed", pitch_speed, 0.0, 540.0, unit="degrees/second")
+        ensure_range("yaw_speed", yaw_speed, 0.0, 540.0, unit="degrees/second")
+        action = self.robot.gimbal.moveto(
+            pitch=pitch,
+            yaw=yaw,
+            pitch_speed=pitch_speed,
+            yaw_speed=yaw_speed,
+        )
+        return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
     def recenter(
-        self, pitchSpeed: float = 100.0, yawSpeed: float = 100.0, blocking: bool = True
-    ) -> Action:
-        # TODO: test that min and max values are correct
-        """
-        Recenters the gun to its starting position.
-        Minimum Pitch speed is 0°/s, maximum pitch speed is 540°/s.
-        Minimum Yaw speed is 0°/s, maximum yaw speed is 540°/s.
-        args:
-        pitchSpeed (float): Speed of the gun pitch in degrees per second. Defaults to 100.0.
-        yawSpeed (float): Speed of the gun yaw in degrees per second. Defaults to 100.0.
-        blocking (bool): Block until action is complete. Defaults to False.
-        """
-        self.moveto(0,0,pitchSpeed=pitchSpeed,yawSpeed=yawSpeed,blocking=blocking)
+        self,
+        *,
+        pitch_speed: float = 100.0,
+        yaw_speed: float = 100.0,
+        blocking: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Any:
+        ensure_range("pitch_speed", pitch_speed, 0.0, 540.0, unit="degrees/second")
+        ensure_range("yaw_speed", yaw_speed, 0.0, 540.0, unit="degrees/second")
+        action = self.robot.gimbal.recenter(pitch_speed=pitch_speed, yaw_speed=yaw_speed)
+        return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def resume(self) -> bool:
-        """
-        Resumes the gun after it has been paused.
-        """
+    def resume(self) -> Any:
         return self.robot.gimbal.resume()
 
-    def suspend(self) -> bool:
-        """
-        Puts the gun into a paused state, where it will be loose and unpowered until resumed.
-        """
+    def suspend(self) -> Any:
         return self.robot.gimbal.suspend()
 
-    # Blaster
+    def fire(self, fire_type: str = "ir", times: int = 1) -> Any:
+        ensure_choice("fire_type", fire_type, ("ir", "water"))
+        ensure_int_range("times", times, 1, 8)
+        return self.robot.blaster.fire(fire_type=fire_type, times=times)
 
-    def fire(self, fireType: str = "ir", times: int = 1) -> bool:
-        """
-        Fires the blaster.
-        Fire type can be either "ir" or "water". Defaults to "ir".
-        "water" refers to water based pellets.
-        args:
-        fireType (str): Type of blaster fire. Defaults to "ir".
-        times (int): Number of times the blaster should be fired. Defaults to 1.
-        """
-        return self.robot.blaster.fire(fire_type=fireType, times=times)
-
-    def setLED(self, brightness: int = 100, effect: str = "on") -> bool:
-        # TODO: test effect
-        """
-        Sets the blaster LED brightness and effect.
-        Minimum brightness is 0, maximum brightness is 255.
-        Effect can be either "on" or "off". Defaults to "on".
-        args:
-        brightness (int): Brightness of the blaster LED. Defaults to 100.
-        effect (str): Effect of the blaster LED. Defaults to "on".
-        """
+    def set_led(self, brightness: int = 100, effect: str = "on") -> Any:
+        ensure_int_range("brightness", brightness, 0, 255)
+        ensure_choice("effect", effect, ("on", "off"))
         return self.robot.blaster.set_led(brightness=brightness, effect=effect)
+
+    def subscribe_angle(self, callback: Callable[..., Any], freq: int = 5) -> Any:
+        ensure_choice("freq", freq, (1, 5, 10, 20, 50))
+        return self.robot.gimbal.sub_angle(freq=freq, callback=callback)
+
+    def unsubscribe_angle(self) -> Any:
+        return self.robot.gimbal.unsub_angle()
+
+    @deprecated_alias("set_leds")
+    def setLEDs(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("move_to")
+    def moveto(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("set_led")
+    def setLED(self, *args: Any, **kwargs: Any) -> Any:
+        return None
