@@ -2,7 +2,7 @@
 
 Student-first wrapper for the DJI RoboMaster EP Python SDK.
 
-The design goal is the same one shown in [test.py](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/test.py): students should be able to write robot behavior as a sequence of clear intentions such as `move`, `detect`, `grab`, and `close` without learning the SDK transport layer first. Grouped subsystems like `robot.cam`, `robot.arm`, and `robot.gun` mirror the physical robot and keep the first classroom exercise short.
+The design goal is the same one shown in [test.py](test.py): students should be able to write robot behavior as a sequence of clear intentions such as `move`, `detect`, `grab`, and `close` without learning the SDK transport layer first. Grouped subsystems like `robot.cam`, `robot.arm`, and `robot.gun` mirror the physical robot and keep the first classroom exercise short.
 
 ## Python support
 
@@ -24,13 +24,13 @@ python3.8 -m pip install robowrap --user
 
 ## Start here
 
-- [Quickstart](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/quickstart.md)
-- [API reference](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/api_reference.md)
-- [Coverage matrix](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/coverage_matrix.md)
-- [Snake case migration](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/migration_snake_case.md)
-- [Troubleshooting](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/troubleshooting.md)
-- [Contributor checklist](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/contributor_checklist.md)
-- [Changelog](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/CHANGELOG.md)
+- [Quickstart](docs/quickstart.md)
+- [API reference](docs/api_reference.md)
+- [Coverage matrix](docs/coverage_matrix.md)
+- [Snake case migration](docs/migration_snake_case.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Contributor checklist](docs/contributor_checklist.md)
+- [Changelog](CHANGELOG.md)
 
 ## Example
 

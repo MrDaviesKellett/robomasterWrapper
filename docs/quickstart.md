@@ -57,6 +57,6 @@ robot.close()
 
 ## Next steps
 
-- Learn the full surface in [api_reference.md](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/api_reference.md)
-- Check old-to-new naming in [migration_snake_case.md](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/migration_snake_case.md)
-- Use [troubleshooting.md](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/troubleshooting.md) if connection, stream, or vision setup fails
+- Learn the full surface in [api_reference.md](api_reference.md)
+- Check old-to-new naming in [migration_snake_case.md](migration_snake_case.md)
+- Use [troubleshooting.md](troubleshooting.md) if connection, stream, or vision setup fails

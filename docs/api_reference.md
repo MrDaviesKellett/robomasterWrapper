@@ -1,6 +1,6 @@
 # API Reference
 
-This file documents the primary snake_case API. Deprecated aliases are listed in [migration_snake_case.md](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/migration_snake_case.md).
+This file documents the primary snake_case API. Deprecated aliases are listed in [migration_snake_case.md](migration_snake_case.md).
 
 ## Student-first design
 

@@ -65,4 +65,4 @@
 ## Invalid parameter errors
 
 - robowrap now raises `ValueError` for out-of-range values instead of silently clamping them.
-- Recovery: check the units in [api_reference.md](/Volumes/StudioScratch/AI/GPTCodex/robomasterWrapper/docs/api_reference.md) and pass values inside the documented range.
+- Recovery: check the units in [api_reference.md](api_reference.md) and pass values inside the documented range.
