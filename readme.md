@@ -21,18 +21,10 @@ This change was made because the original DJI RoboMaster SDK appears to be unmai
 
 ```sh
 python -m pip install --upgrade pip
-python -m pip install robomaster-sdk-modern robowrap
+python -m pip install robowrap
 ```
 
 `robowrap` depends on `robomaster-sdk-modern`, so installing `robowrap` is usually enough. Installing both explicitly makes the SDK choice clear.
-
-To build and publish a new release:
-
-```sh
-python -m pip install --upgrade build twine
-python -m build
-python -m twine upload dist/*
-```
 
 ## Snake_case policy
 
