@@ -21,14 +21,16 @@
 
 ## Camera problems
 
-### `OpenCV is required for Camera.view()`
+### OpenCV and PyAV duplicate FFmpeg warnings
 
-- `view()` needs `opencv-python`.
-- Recovery: install `opencv-python` and rerun.
+- The modern SDK uses PyAV for media. OpenCV also ships FFmpeg libraries.
+- On macOS, importing both can produce duplicate `AVFFrameReceiver` or `AVFAudioReceiver` warnings and may cause corrupt frames or crashes.
+- Recovery: use `robot.cam.view()` for display. robowrap uses PySide6 for the viewer and does not use OpenCV.
+- Use `frame = robot.cam.frame()` when your code needs the latest frame without a display window.
 
 ### Video stream starts but nothing appears
 
-- Make sure you called `robot.cam.start()` before `view()`.
+- Make sure you called `robot.cam.view()` or `robot.cam.start()` before reading frames.
 - On some classroom machines another process may still hold the stream.
 - Recovery: call `robot.cam.stop()`, wait one second, then restart the stream.
 

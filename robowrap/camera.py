@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import importlib.util
+import multiprocessing
+import queue
+import threading
+import time
 from typing import Any, Callable, Optional
-
-try:  # pragma: no cover - optional dependency in local tests
-    import cv2
-except ImportError:  # pragma: no cover - optional dependency in local tests
-    cv2 = None
 
 try:  # pragma: no cover - optional dependency in local tests
     from simple_pid import PID
@@ -35,6 +35,7 @@ from .helperFuncs import (
     ensure_color,
     ensure_range,
 )
+from .viewer import run_qt_viewer
 
 
 class Camera:
@@ -58,12 +59,12 @@ class Camera:
         self.follow_distance = 0.5
         self.at_marker = False
         self._debug_items: list[dict[str, Any]] = []
+        self._viewer_queue: Optional[Any] = None
+        self._viewer_process: Optional[multiprocessing.Process] = None
+        self._viewer_thread: Optional[threading.Thread] = None
+        self._viewer_stop = threading.Event()
         self.pid = PID(-330, 0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
         self.pid.output_limits = (-self.follow_speed / 3.5 * 600, self.follow_speed / 3.5 * 600)
-
-    def _require_cv2(self) -> None:
-        if cv2 is None:
-            raise RuntimeError("OpenCV is required for Camera.view(). Install 'opencv-python'.")
 
     def _update_resolution_dimensions(self) -> None:
         if self.resolution == "360p":
@@ -93,31 +94,114 @@ class Camera:
 
     def stop(self) -> Any:
         self.stop_detect()
+        self.stop_view()
         if self.audio_streaming:
             self.stop_audio_stream()
         if not self.streaming:
             return True
         result = self.camera.stop_video_stream()
         self.streaming = False
-        if cv2 is not None:
-            cv2.destroyAllWindows()
         return result
 
-    def view(self) -> Any:
-        self._require_cv2()
-        if not self.streaming:
-            self.start()
-        image = self.camera.read_cv2_image(strategy="newest")
-        if image is None:
-            return None
+    def _draw_box(self, image: Any, start: tuple[int, int], end: tuple[int, int], color: tuple[int, int, int]) -> None:
+        try:
+            height, width = image.shape[:2]
+            x1 = max(0, min(width - 1, start[0]))
+            y1 = max(0, min(height - 1, start[1]))
+            x2 = max(0, min(width - 1, end[0]))
+            y2 = max(0, min(height - 1, end[1]))
+            if x2 <= x1 or y2 <= y1:
+                return
+            image[y1 : min(y1 + 2, height), x1:x2] = color
+            image[max(y2 - 2, 0) : y2, x1:x2] = color
+            image[y1:y2, x1 : min(x1 + 2, width)] = color
+            image[y1:y2, max(x2 - 2, 0) : x2] = color
+        except Exception:
+            return
+
+    def _draw_point(self, image: Any, point: tuple[int, int], color: tuple[int, int, int]) -> None:
+        try:
+            height, width = image.shape[:2]
+            x = max(0, min(width - 1, point[0]))
+            y = max(0, min(height - 1, point[1]))
+            image[max(y - 2, 0) : min(y + 3, height), max(x - 2, 0) : min(x + 3, width)] = color
+        except Exception:
+            return
+
+    def _draw_debug_items(self, image: Any) -> None:
         for item in self._debug_items:
             if item["type"] == "box":
-                cv2.rectangle(image, item["start"], item["end"], item["color"], 2)
+                self._draw_box(image, item["start"], item["end"], item["color"])
             elif item["type"] == "point":
-                cv2.circle(image, item["point"], 2, item["color"], -1)
-        cv2.imshow("RoboMaster", image)
-        cv2.waitKey(1)
+                self._draw_point(image, item["point"], item["color"])
+
+    def frame(self, strategy: str = "newest", *, draw_debug: bool = True) -> Any:
+        if not self.streaming:
+            self.start()
+        image = self.camera.read_cv2_image(strategy=strategy)
+        if image is None:
+            return None
+        if draw_debug:
+            self._draw_debug_items(image)
         return image
+
+    def _viewer_worker(self, fps: int) -> None:
+        interval = 1.0 / fps
+        while not self._viewer_stop.is_set():
+            if self._viewer_process is not None and not self._viewer_process.is_alive():
+                break
+            image = self.frame(draw_debug=True)
+            if image is not None and self._viewer_queue is not None:
+                while True:
+                    try:
+                        self._viewer_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                try:
+                    self._viewer_queue.put_nowait(image)
+                except queue.Full:
+                    pass
+            time.sleep(interval)
+
+    def view(self, *, fps: int = 30, title: str = "RoboMaster Camera", color_format: str = "bgr") -> bool:
+        ensure_choice("color_format", color_format, ("bgr", "rgb"))
+        ensure_range("fps", fps, 1, 60, unit="frames/second")
+        if importlib.util.find_spec("PySide6") is None:
+            raise RuntimeError("Camera.view() requires PySide6. Install it with 'python -m pip install PySide6'.")
+        if self._viewer_process is not None and self._viewer_process.is_alive():
+            return True
+        if not self.streaming:
+            self.start()
+        context = multiprocessing.get_context("spawn")
+        self._viewer_queue = context.Queue(maxsize=2)
+        self._viewer_stop.clear()
+        self._viewer_process = context.Process(
+            target=run_qt_viewer,
+            args=(self._viewer_queue, title, color_format),
+            daemon=True,
+        )
+        self._viewer_process.start()
+        self._viewer_thread = threading.Thread(target=self._viewer_worker, args=(fps,), daemon=True)
+        self._viewer_thread.start()
+        return True
+
+    def stop_view(self) -> None:
+        self._viewer_stop.set()
+        if self._viewer_queue is not None:
+            try:
+                self._viewer_queue.put_nowait(None)
+            except Exception:
+                pass
+        if self._viewer_thread is not None and self._viewer_thread.is_alive():
+            self._viewer_thread.join(timeout=1.0)
+        if self._viewer_process is not None and self._viewer_process.is_alive():
+            self._viewer_process.join(timeout=1.0)
+            if self._viewer_process.is_alive():
+                self._viewer_process.terminate()
+                self._viewer_process.join(timeout=1.0)
+        self._viewer_thread = None
+        self._viewer_process = None
+        self._viewer_queue = None
 
     def set_pid(self, p: float = 330, i: float = 0, d: float = 28) -> None:
         self.pid.Kp = -p

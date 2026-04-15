@@ -128,3 +128,32 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(fake.calls[-1][0], "set_robot_mode")
         self.assertEqual(fake.robotic_arm.last_call()[0], "moveto")
         self.assertEqual(fake.blaster.last_call()[0], "set_led")
+
+    def test_camera_frame_reads_latest_image(self) -> None:
+        fake = FakeRobot()
+        fake.camera.next_image = object()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+
+        frame = robot.cam.frame()
+
+        self.assertIs(frame, fake.camera.next_image)
+        self.assertEqual(fake.camera.last_call()[0], "read_cv2_image")
+
+    def test_camera_view_requires_pyside6_when_viewer_dependency_is_missing(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        import robowrap.camera as camera_module
+
+        original_find_spec = camera_module.importlib.util.find_spec
+
+        def fake_find_spec(name: str) -> object:
+            if name == "PySide6":
+                return None
+            return original_find_spec(name)
+
+        camera_module.importlib.util.find_spec = fake_find_spec
+        try:
+            with self.assertRaisesRegex(RuntimeError, "requires PySide6"):
+                robot.cam.view()
+        finally:
+            camera_module.importlib.util.find_spec = original_find_spec

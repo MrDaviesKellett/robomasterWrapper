@@ -26,6 +26,8 @@ python -m pip install robowrap
 
 `robowrap` depends on `robomaster-sdk-modern`, so installing `robowrap` is usually enough. Installing both explicitly makes the SDK choice clear.
 
+`robot.cam.view()` uses PySide6 for live display and does not use OpenCV. This avoids the PyAV/OpenCV duplicate FFmpeg conflict on macOS.
+
 ## Snake_case policy
 
 - The public wrapper API is now `snake_case` only.
@@ -52,6 +54,8 @@ robot = RoboMaster()
 robot.set_leds(0, 128, 255)
 robot.forward(0.5)
 robot.cam.detect_person()
+robot.cam.view()
+frame = robot.cam.frame()
 robot.arm.move_to(x=0, z=50)
 robot.close()
 ```

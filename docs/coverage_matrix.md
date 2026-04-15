@@ -76,7 +76,7 @@ Status values:
 | Upstream EP API | Wrapper surface | Status | Notes |
 | --- | --- | --- | --- |
 | `camera.start_video_stream` / `stop_video_stream` | `robot.cam.start()` / `stop()` | wrapped | |
-| `camera.read_cv2_image` | `robot.cam.view()` | wrapped | `view()` also renders debug overlays. |
+| `camera.read_cv2_image` | `robot.cam.view()` / `robot.cam.frame()` | wrapped | `view()` opens a PySide6 live viewer; `frame()` returns the latest frame. |
 | `camera.take_photo` | `robot.cam.take_photo()` | wrapped | |
 | `camera.start_audio_stream` / `stop_audio_stream` | `robot.cam.start_audio_stream()` / `stop_audio_stream()` | wrapped | |
 | `camera.read_audio_frame` | `robot.cam.read_audio_frame()` | wrapped | |

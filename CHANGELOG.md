@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.4 - 2026-04-15
+
+- Updated the minimum SDK dependency to `robomaster-sdk-modern>=1.1.1.76`.
+- Replaced OpenCV display with a PySide6 live viewer to avoid PyAV/OpenCV duplicate FFmpeg conflicts on macOS.
+- Changed `Camera.view()` to start a non-blocking live viewer process.
+- Added `Camera.frame()` for code that needs the latest camera frame.
+- Added `Camera.stop_view()` to close the viewer from code.
+- Updated camera troubleshooting docs for the PyAV/PySide6 viewer path.
+
+## 0.8.3 - 2026-04-15
+
+- Updated the minimum SDK dependency to `robomaster-sdk-modern>=1.1.1.76`.
+- Removed OpenCV from default dependencies because the modern SDK uses PyAV and both packages can load conflicting FFmpeg libraries on macOS.
+- Changed `Camera.view()` to return frames without importing OpenCV by default.
+- Added optional OpenCV display support behind `Camera.view(show=True, allow_unsafe_opencv=True)` and the `viewer` extra.
+- Updated camera troubleshooting docs for the PyAV/OpenCV duplicate-library warning.
+
 ## 0.8.2 - 2026-04-13
 
 - Updated packaging to target modern Python releases with `requires-python >=3.9`, including Python 3.14+.

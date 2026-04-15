@@ -118,7 +118,9 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | --- | --- | --- | --- | --- | --- |
 | `set_resolution(resolution="360p")` | `360p`, `540p`, `720p` | `None` | n/a | `robot.cam.set_resolution("720p")` | Raises `ValueError` for unsupported resolutions. |
 | `start()` / `stop()` | none | SDK result | non-blocking | `robot.cam.start()` | Stop and restart the stream if frames stall. |
-| `view()` | none | current image or `None` | non-blocking display loop step | `robot.cam.view()` | Requires `opencv-python`. |
+| `view(fps=30, title="RoboMaster Camera", color_format="bgr")` | `fps`: `1..60`; `color_format`: `bgr` or `rgb` | `True` when viewer starts or is already open | non-blocking live viewer | `robot.cam.view()` | Uses PySide6, not OpenCV. Call `stop_view()` or `stop()` to close it from code. |
+| `frame(strategy="newest", draw_debug=True)` | `strategy`: SDK frame-read strategy | latest image or `None` | non-blocking frame read | `image = robot.cam.frame()` | Use this when code needs the current frame instead of a display window. |
+| `stop_view()` | none | `None` | immediate | `robot.cam.stop_view()` | Closes the PySide6 viewer process. |
 | `take_photo()` | none | SDK result | n/a | `robot.cam.take_photo()` | Ensure storage and connection are stable before shooting. |
 | `start_audio_stream()` / `stop_audio_stream()` | none | SDK result | non-blocking | `robot.cam.start_audio_stream()` | Stop all media streams and retry if audio setup fails. |
 | `read_audio_frame(timeout=1.0)` | `timeout`: `0.01..60 s` | audio bytes | waits up to timeout | `frame = robot.cam.read_audio_frame()` | Increase timeout if frames arrive slowly. |

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robowrap"
-version = "0.8.2"
+version = "0.8.4"
 description = "A student-first wrapper around the DJI RoboMaster EP Python SDK."
 readme = "readme.md"
 requires-python = ">=3.9"
@@ -12,9 +12,9 @@ authors = [
   { name = "Martin Davies", email = "mdavies@kellettschool.com" },
 ]
 dependencies = [
-  "robomaster-sdk-modern>=0.1.1.69",
+  "robomaster-sdk-modern>=1.1.1.76",
+  "PySide6",
   "simple_pid",
-  "opencv-python",
 ]
 classifiers = [
   "Programming Language :: Python :: 3",

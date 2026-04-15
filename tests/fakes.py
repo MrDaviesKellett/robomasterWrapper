@@ -158,6 +158,10 @@ class FakeLed(_Recorder):
 
 
 class FakeCameraModule(_Recorder):
+    def __init__(self) -> None:
+        super().__init__()
+        self.next_image: Any = None
+
     def start_video_stream(self, **kwargs: Any) -> bool:
         self.record("start_video_stream", **kwargs)
         return True
@@ -168,7 +172,7 @@ class FakeCameraModule(_Recorder):
 
     def read_cv2_image(self, **kwargs: Any) -> Any:
         self.record("read_cv2_image", **kwargs)
-        return None
+        return self.next_image
 
     def take_photo(self) -> bool:
         self.record("take_photo")
