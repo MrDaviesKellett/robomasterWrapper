@@ -1,10 +1,9 @@
 name: Publish to PyPI
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
+  release:
+    types:
+      - published
 
 jobs:
   build:
@@ -15,6 +14,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,10 +23,10 @@ jobs:
           python-version: "3.14"
 
       - name: Verify tag matches package version
-        if: github.event_name == 'push'
         shell: bash
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_NAME#v}"
           PACKAGE_VERSION="$(python - <<'PY'
           import re
           from pathlib import Path
@@ -36,6 +37,10 @@ jobs:
           print(match.group(1))
           PY
           )"
+          if [ "$TAG_NAME" = "$TAG_VERSION" ]; then
+            echo "Release tag must start with v, for example v0.8.4"
+            exit 1
+          fi
           if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
             echo "Tag version $TAG_VERSION does not match package version $PACKAGE_VERSION"
             exit 1
@@ -69,3 +74,5 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
