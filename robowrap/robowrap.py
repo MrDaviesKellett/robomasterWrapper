@@ -30,6 +30,8 @@ class RoboMaster:
         *,
         auto_reset: bool = True,
         default_mode: str = "chassis",
+        connect_retries: int = 2,
+        connect_retry_delay: float = 1.0,
         _sdk_robot: Optional[Any] = None,
         _sleep=sleep,
     ) -> None:
@@ -39,9 +41,26 @@ class RoboMaster:
 
         connection = self._normalize_connection_type(conn_type)
         ensure_choice("protocol", protocol.lower(), ("tcp", "udp"))
-        initialize_result = self.robot.initialize(conn_type=connection, proto_type=protocol.lower(), sn=serial)
+        ensure_int_range("connect_retries", connect_retries, 0, 20)
+        ensure_range("connect_retry_delay", connect_retry_delay, 0.0, 30.0, unit="seconds")
+
+        initialize_result: Any = False
+        initialize_error: Optional[Exception] = None
+        for attempt in range(connect_retries + 1):
+            try:
+                initialize_result = self.robot.initialize(conn_type=connection, proto_type=protocol.lower(), sn=serial)
+            except Exception as exc:
+                initialize_result = False
+                initialize_error = exc
+            if initialize_result is not False:
+                break
+            if attempt < connect_retries:
+                self.sleep(connect_retry_delay)
         if initialize_result is False:
-            raise RuntimeError("Robot could not be connected. Check power, network mode, and serial number.")
+            message = "Robot could not be connected. Check power, network mode, and serial number."
+            if initialize_error is not None:
+                message = f"{message} Last error: {initialize_error}"
+            raise RuntimeError(message)
 
         self.chassis = Chassis(self)
         self.gun = Gun(self)
@@ -291,10 +310,10 @@ class RoboMaster:
         return self.back(distance=distance, speed=speed, blocking=blocking)
 
     def left(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
-        return self.move(y=distance, speed=speed, blocking=blocking)
+        return self.move(y=-distance, speed=speed, blocking=blocking)
 
     def right(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
-        return self.move(y=-distance, speed=speed, blocking=blocking)
+        return self.move(y=distance, speed=speed, blocking=blocking)
 
     def circle(
         self,

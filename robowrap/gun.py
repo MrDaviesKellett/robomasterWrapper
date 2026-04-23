@@ -88,12 +88,23 @@ class Gun:
         pitch_speed: float = 100.0,
         yaw_speed: float = 100.0,
         blocking: bool = True,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 8.0,
     ) -> Any:
         ensure_range("pitch_speed", pitch_speed, 0.0, 540.0, unit="degrees/second")
         ensure_range("yaw_speed", yaw_speed, 0.0, 540.0, unit="degrees/second")
         action = self.robot.gimbal.recenter(pitch_speed=pitch_speed, yaw_speed=yaw_speed)
-        return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
+        result = self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
+        if not blocking or result is not False:
+            return result
+
+        # Some firmware/Wi-Fi combinations never report completion for gimbal.recenter().
+        fallback_action = self.robot.gimbal.moveto(
+            pitch=0.0,
+            yaw=0.0,
+            pitch_speed=pitch_speed,
+            yaw_speed=yaw_speed,
+        )
+        return self.robomaster._complete_action(fallback_action, blocking=blocking, timeout=timeout)
 
     def resume(self) -> Any:
         return self.robot.gimbal.resume()

@@ -63,6 +63,7 @@ class Camera:
         self._viewer_process: Optional[multiprocessing.Process] = None
         self._viewer_thread: Optional[threading.Thread] = None
         self._viewer_stop = threading.Event()
+        self._consecutive_frame_failures = 0
         self.pid = PID(-330, 0, -28, setpoint=0.0, sample_time=1.0 / self.frequency)
         self.pid.output_limits = (-self.follow_speed / 3.5 * 600, self.follow_speed / 3.5 * 600)
 
@@ -85,6 +86,7 @@ class Camera:
             return True
         result = self.camera.start_video_stream(display=False, resolution=self.resolution)
         self.streaming = bool(result is not False)
+        self._consecutive_frame_failures = 0
         return result
 
     def stop_detect(self) -> None:
@@ -101,7 +103,18 @@ class Camera:
             return True
         result = self.camera.stop_video_stream()
         self.streaming = False
+        self._consecutive_frame_failures = 0
         return result
+
+    def _recover_video_stream(self) -> bool:
+        if self.streaming:
+            try:
+                self.camera.stop_video_stream()
+            except Exception:
+                pass
+            self.streaming = False
+        result = self.start()
+        return bool(result is not False)
 
     def _draw_box(self, image: Any, start: tuple[int, int], end: tuple[int, int], color: tuple[int, int, int]) -> None:
         try:
@@ -138,9 +151,21 @@ class Camera:
     def frame(self, strategy: str = "newest", *, draw_debug: bool = True) -> Any:
         if not self.streaming:
             self.start()
-        image = self.camera.read_cv2_image(strategy=strategy)
+        try:
+            image = self.camera.read_cv2_image(strategy=strategy)
+        except Exception:
+            image = None
         if image is None:
-            return None
+            self._consecutive_frame_failures += 1
+            if self._consecutive_frame_failures >= 3 and self._recover_video_stream():
+                try:
+                    image = self.camera.read_cv2_image(strategy=strategy)
+                except Exception:
+                    image = None
+                self._consecutive_frame_failures = 0 if image is not None else self._consecutive_frame_failures
+            if image is None:
+                return None
+        self._consecutive_frame_failures = 0
         if draw_debug:
             self._draw_debug_items(image)
         return image
@@ -184,6 +209,9 @@ class Camera:
         self._viewer_thread = threading.Thread(target=self._viewer_worker, args=(fps,), daemon=True)
         self._viewer_thread.start()
         return True
+
+    def show(self, *args: Any, **kwargs: Any) -> Any:
+        return self.view(*args, **kwargs)
 
     def stop_view(self) -> None:
         self._viewer_stop.set()
