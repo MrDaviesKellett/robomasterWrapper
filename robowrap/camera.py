@@ -58,6 +58,44 @@ class Camera:
         self.follow_speed = 0.5
         self.follow_distance = 0.5
         self.at_marker = False
+        self._line_follow_profiles: dict[str, dict[str, float]] = {
+            "classroom": {"kp": 230.0, "ki": 0.0, "kd": 35.0, "heading_weight": 0.35, "base_speed": 0.28},
+            "balanced": {"kp": 260.0, "ki": 0.0, "kd": 40.0, "heading_weight": 0.45, "base_speed": 0.4},
+            "sport": {"kp": 300.0, "ki": 0.0, "kd": 45.0, "heading_weight": 0.55, "base_speed": 0.58},
+        }
+        self._line_follow_speed_presets: dict[str, float] = {"slow": 0.25, "medium": 0.4, "fast": 0.6}
+        self._line_follow_target_presets: dict[str, float] = {"left": 0.4, "center": 0.5, "right": 0.6}
+        self._line_follow_config: dict[str, Any] = {
+            "profile": "classroom",
+            "target_x": 0.5,
+            "lookahead": 3,
+            "stop_on_lost": True,
+            "base_speed": 0.28,
+            "min_speed": 0.08,
+            "max_turn_speed": 220.0,
+            "heading_weight": 0.35,
+            "speed_slowdown_gain": 0.7,
+            "curvature_slowdown_gain": 0.45,
+            "lost_hold_seconds": 0.35,
+            "stop_after_lost_seconds": 1.2,
+            "search_turn_speed": 65.0,
+            "kp": 230.0,
+            "ki": 0.0,
+            "kd": 35.0,
+            "invert_turn": False,
+        }
+        self._line_follow_state: dict[str, Any] = {
+            "active": False,
+            "line_visible": False,
+            "line_type": None,
+            "last_error": 0.0,
+            "last_turn_speed": 0.0,
+            "last_speed": 0.0,
+            "lost_seconds": 0.0,
+            "last_line_time": None,
+            "last_update_time": None,
+        }
+        self._line_integral = 0.0
         self._debug_items: list[dict[str, Any]] = []
         self._viewer_queue: Optional[Any] = None
         self._viewer_process: Optional[multiprocessing.Process] = None
@@ -93,6 +131,19 @@ class Camera:
         if self.detecting:
             self.vision.unsub_detect_info(self.detect_mode)
             self.detecting = False
+        self._reset_line_follow_runtime()
+
+    def _reset_line_follow_runtime(self) -> None:
+        self._line_integral = 0.0
+        self._line_follow_state["active"] = False
+        self._line_follow_state["line_visible"] = False
+        self._line_follow_state["line_type"] = None
+        self._line_follow_state["last_error"] = 0.0
+        self._line_follow_state["last_turn_speed"] = 0.0
+        self._line_follow_state["last_speed"] = 0.0
+        self._line_follow_state["lost_seconds"] = 0.0
+        self._line_follow_state["last_line_time"] = None
+        self._line_follow_state["last_update_time"] = None
 
     def stop(self) -> Any:
         self.stop_detect()
@@ -232,9 +283,15 @@ class Camera:
         self._viewer_queue = None
 
     def set_pid(self, p: float = 330, i: float = 0, d: float = 28) -> None:
+        ensure_range("p", p, 0.0, 2000.0)
+        ensure_range("i", i, 0.0, 1000.0)
+        ensure_range("d", d, 0.0, 1000.0)
         self.pid.Kp = -p
         self.pid.Ki = -i
         self.pid.Kd = -d
+        self._line_follow_config["kp"] = float(p)
+        self._line_follow_config["ki"] = float(i)
+        self._line_follow_config["kd"] = float(d)
 
     def set_detect_mode(self, mode: str = "line") -> None:
         ensure_choice("mode", mode.lower(), ("person", "gesture", "line", "marker", "robot"))
@@ -268,11 +325,43 @@ class Camera:
             )
         self._debug_items = boxes
 
-    def _store_line(self, info: list[Any]) -> None:
+    def _extract_line_points(self, info: Any) -> tuple[list[dict[str, float]], Optional[int]]:
+        if info is None or info == [0]:
+            return [], 0
+        points: list[dict[str, float]] = []
+        line_type: Optional[int] = None
+
+        if isinstance(info, list) and info and all(isinstance(value, (int, float)) for value in info):
+            if len(info) >= 6:
+                count = int(info[0])
+                line_type = int(info[1])
+                flat = info[2:]
+                available = min(count, len(flat) // 4)
+                for idx in range(available):
+                    x, y, theta, curvature = flat[idx * 4 : idx * 4 + 4]
+                    points.append({"x": float(x), "y": float(y), "theta": float(theta), "curvature": float(curvature)})
+            return points, line_type
+
+        values = info if isinstance(info, list) else []
+        if values and isinstance(values[0], (int, float)) and len(values) > 1 and isinstance(values[1], (list, tuple)):
+            line_type = int(values[0])
+            values = values[1:]
+
+        for item in values:
+            if not isinstance(item, (list, tuple)) or len(item) < 4:
+                continue
+            x, y, theta, curvature = item[:4]
+            if not all(isinstance(value, (int, float)) for value in (x, y, theta, curvature)):
+                continue
+            points.append({"x": float(x), "y": float(y), "theta": float(theta), "curvature": float(curvature)})
+        return points, line_type
+
+    def _store_line(self, info: Any) -> None:
         points: list[dict[str, Any]] = []
-        for point in info[1:]:
-            x = int(point[0] * self.width)
-            y = int(point[1] * self.height)
+        line_points, _ = self._extract_line_points(info)
+        for point in line_points:
+            x = int(point["x"] * self.width)
+            y = int(point["y"] * self.height)
             points.append({"type": "point", "point": (x, y), "color": self.debug_color})
         self._debug_items = points
 
@@ -299,6 +388,43 @@ class Camera:
         self.detecting = bool(result is not False)
         return result
 
+    def _normalize_heading_error(self, theta: float) -> float:
+        value = float(theta)
+        if abs(value) <= 3.2:
+            normalized = value / 1.2
+        elif abs(value) <= 180.0:
+            normalized = value / 90.0
+        else:
+            normalized = value / 180.0
+        return max(-1.0, min(1.0, normalized))
+
+    def _clamp(self, value: float, minimum: float, maximum: float) -> float:
+        return max(minimum, min(maximum, value))
+
+    def set_line_follow_profile(self, profile: str = "classroom") -> None:
+        profile_name = profile.lower()
+        ensure_choice("profile", profile_name, tuple(self._line_follow_profiles))
+        selected = self._line_follow_profiles[profile_name]
+        self._line_follow_config["profile"] = profile_name
+        self._line_follow_config["kp"] = selected["kp"]
+        self._line_follow_config["ki"] = selected["ki"]
+        self._line_follow_config["kd"] = selected["kd"]
+        self._line_follow_config["heading_weight"] = selected["heading_weight"]
+        self._line_follow_config["base_speed"] = selected["base_speed"]
+
+    def set_line_follow_speed(self, speed: float) -> None:
+        ensure_range("speed", speed, 0.05, 3.5, unit="m/s")
+        self._line_follow_config["base_speed"] = speed
+        self.follow_speed = speed
+
+    def stop_line_follow(self, *, stop_robot: bool = True) -> None:
+        self.stop_detect()
+        if stop_robot:
+            self.robomaster.stop()
+
+    def get_line_follow_status(self) -> dict[str, Any]:
+        return dict(self._line_follow_state)
+
     def detect(self, name: Optional[str] = None, color: Optional[str] = None) -> Any:
         mode = self.detect_mode if name is None else name.lower()
         return self._restart_detection(mode, self._detect_callback, color=color)
@@ -319,35 +445,141 @@ class Camera:
         return self.detect("robot")
 
     def set_follow_speed(self, speed: float) -> None:
-        ensure_range("speed", speed, 0.05, 3.5, unit="m/s")
-        self.follow_speed = speed
+        self.set_line_follow_speed(speed)
         self.pid.output_limits = (-self.follow_speed / 3.5 * 600, self.follow_speed / 3.5 * 600)
 
     def set_follow_distance(self, distance: float) -> None:
         ensure_range("distance", distance, 0.0, 1.0)
         self.follow_distance = distance
+        self._line_follow_config["target_x"] = self._clamp(distance, 0.0, 1.0)
 
     def _follow_callback(self, info: Any) -> bool:
         self._detect_callback(info)
         if self.detect_mode != "line":
             return False
-        if info == [0] or not info:
+
+        points, line_type = self._extract_line_points(info)
+        now = time.monotonic()
+        last_update = self._line_follow_state["last_update_time"] or now
+        dt = max(0.001, now - last_update)
+        self._line_follow_state["last_update_time"] = now
+        self._line_follow_state["line_type"] = line_type
+
+        if points:
+            self._line_follow_state["active"] = True
+            self._line_follow_state["line_visible"] = True
+            self._line_follow_state["last_line_time"] = now
+            lookahead = int(self._line_follow_config["lookahead"])
+            point = points[min(max(0, lookahead), len(points) - 1)]
+            lateral_error = point["x"] - float(self._line_follow_config["target_x"])
+            heading_error = self._normalize_heading_error(point["theta"])
+            weighted_error = lateral_error + float(self._line_follow_config["heading_weight"]) * heading_error
+
+            self._line_integral += weighted_error * dt
+            derivative = (weighted_error - float(self._line_follow_state["last_error"])) / dt
+            self._line_follow_state["last_error"] = weighted_error
+
+            turn_speed = (
+                float(self._line_follow_config["kp"]) * weighted_error
+                + float(self._line_follow_config["ki"]) * self._line_integral
+                + float(self._line_follow_config["kd"]) * derivative
+            )
+            if bool(self._line_follow_config["invert_turn"]):
+                turn_speed = -turn_speed
+            max_turn = float(self._line_follow_config["max_turn_speed"])
+            turn_speed = self._clamp(turn_speed, -max_turn, max_turn)
+
+            curvature = self._clamp(abs(point["curvature"]) / 10.0, 0.0, 1.0)
+            speed_scale = 1.0 - (
+                float(self._line_follow_config["speed_slowdown_gain"]) * abs(turn_speed) / max_turn
+                + float(self._line_follow_config["curvature_slowdown_gain"]) * curvature
+            )
+            speed_scale = self._clamp(speed_scale, 0.15, 1.0)
+            speed = max(float(self._line_follow_config["min_speed"]), float(self._line_follow_config["base_speed"]) * speed_scale)
+
+            self._line_follow_state["last_turn_speed"] = turn_speed
+            self._line_follow_state["last_speed"] = speed
+            self._line_follow_state["lost_seconds"] = 0.0
+            self.robomaster.set_speed(x=speed, z=turn_speed)
+            return True
+
+        self._line_follow_state["line_visible"] = False
+        last_line = self._line_follow_state["last_line_time"]
+        lost_seconds = 99.0 if last_line is None else max(0.0, now - last_line)
+        self._line_follow_state["lost_seconds"] = lost_seconds
+        if lost_seconds <= float(self._line_follow_config["lost_hold_seconds"]):
+            last_turn = float(self._line_follow_state["last_turn_speed"])
+            crawl = max(0.05, float(self._line_follow_config["min_speed"]))
+            self.robomaster.set_speed(x=crawl, z=last_turn * 0.6)
+            return False
+
+        if bool(self._line_follow_config["stop_on_lost"]) and lost_seconds >= float(self._line_follow_config["stop_after_lost_seconds"]):
             self.robomaster.stop()
             return False
-        follow_point = min(5, len(info) - 2)
-        tangent_angle = info[follow_point + 1][2]
-        turn_speed = self.pid(tangent_angle)
-        self.robomaster.set_speed(x=self.follow_speed, z=turn_speed)
+
+        search_turn = float(self._line_follow_config["search_turn_speed"])
+        direction = -1.0 if float(self._line_follow_state["last_turn_speed"]) < 0 else 1.0
+        self.robomaster.set_speed(x=max(0.05, float(self._line_follow_config["min_speed"])), z=direction * search_turn)
         return True
 
-    def follow(self, name: Optional[str] = None, color: str = "red") -> Any:
+    def follow(
+        self,
+        name: Optional[str] = None,
+        color: str = "red",
+        *,
+        profile: str = "classroom",
+        speed: Optional[float | str] = None,
+        target: str = "center",
+        stop_on_lost: bool = True,
+        lookahead: int = 3,
+    ) -> Any:
         mode = self.detect_mode if name is None else name.lower()
         if mode != "line":
             raise NotImplementedError("Only line following is implemented in the student wrapper.")
+        self.set_line_follow_profile(profile)
+        ensure_choice("target", target.lower(), tuple(self._line_follow_target_presets))
+        self._line_follow_config["target_x"] = self._line_follow_target_presets[target.lower()]
+        ensure_range("lookahead", lookahead, 0, 9)
+        self._line_follow_config["lookahead"] = int(lookahead)
+        self._line_follow_config["stop_on_lost"] = bool(stop_on_lost)
+
+        if speed is not None:
+            if isinstance(speed, str):
+                preset = speed.lower()
+                ensure_choice("speed", preset, tuple(self._line_follow_speed_presets))
+                self.set_line_follow_speed(self._line_follow_speed_presets[preset])
+            else:
+                self.set_line_follow_speed(float(speed))
+
+        self._line_follow_state["active"] = True
+        self._line_follow_state["last_update_time"] = None
+        self._line_follow_state["last_line_time"] = None
+        self._line_integral = 0.0
         return self._restart_detection(mode, self._follow_callback, color=color)
 
-    def follow_line(self, color: str = "red") -> Any:
-        return self.follow("line", color=color)
+    def follow_line(
+        self,
+        color: str = "red",
+        *,
+        speed: Optional[float | str] = None,
+        profile: str = "classroom",
+        target: str = "center",
+        stop_on_lost: bool = True,
+        lookahead: int = 3,
+    ) -> Any:
+        return self.follow(
+            "line",
+            color=color,
+            speed=speed,
+            profile=profile,
+            target=target,
+            stop_on_lost=stop_on_lost,
+            lookahead=lookahead,
+        )
+
+    def follow_line_easy(self, color: str = "red", speed: str = "slow") -> Any:
+        ensure_choice("speed", speed.lower(), tuple(self._line_follow_speed_presets))
+        return self.follow_line(color=color, speed=speed.lower(), profile="classroom")
 
     def move_to_marker(
         self,
