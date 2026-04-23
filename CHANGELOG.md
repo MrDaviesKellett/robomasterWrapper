@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.5 - 2026-04-23
+
+- Fixed strafing direction so `left()` and `right()` map correctly to chassis motion.
+- Hardened `gun.recenter()` with a default timeout and a `moveto(0, 0)` fallback when completion is not reported.
+- Added `cam.show()` as a compatibility alias to `cam.view()`.
+- Added camera stream self-recovery in `cam.frame()` after repeated decode/read failures.
+- Added connection retry controls (`connect_retries`, `connect_retry_delay`) to improve reliability on unstable links.
+
 ## 0.8.4 - 2026-04-15
 
 - Updated the minimum SDK dependency to `robomaster-sdk-modern>=1.1.1.76`.
