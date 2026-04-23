@@ -116,6 +116,7 @@ robot.close()
 ## 7. What to learn next
 
 - Use `robot.move(x=..., y=...)` for more exact movement.
-- Use `robot.cam.follow_line()` for line following.
+- Use `robot.cam.follow_line_easy()` for line following.
+- Try `robot.cam.follow_line(speed="slow", profile="classroom")` before manual PID tuning.
 - Use `robot.gun.move_to()` to control the gimbal.
 - Use the [API reference](api_reference.md) when you need more options.

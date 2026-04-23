@@ -131,7 +131,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `set_pid(p=330, i=0, d=28)` | PID gains for line following | `None` | n/a | `robot.cam.set_pid(250, 0, 20)` | Tune only after the default settings work. |
+| `set_pid(p=330, i=0, d=28)` | PID gains for line steering (`p`,`i`,`d`) | `None` | n/a | `robot.cam.set_pid(250, 0, 20)` | Advanced tuning. Start with profiles before changing gains manually. |
 | `set_detect_mode(mode="line")` | `person`, `gesture`, `line`, `marker`, `robot` | `None` | n/a | `robot.cam.set_detect_mode("marker")` | Invalid mode names raise `ValueError`. |
 | `set_vision_debug(value=True)` | boolean | `None` | n/a | `robot.cam.set_vision_debug(True)` | Use with `view()` to see overlays. |
 | `set_debug_color(color=(255, 0, 0))` | RGB `0..255` | `None` | n/a | `robot.cam.set_debug_color((0, 255, 0))` | Invalid tuples raise `TypeError` or `ValueError`. |
@@ -142,10 +142,15 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `detect_line(color="red")` | `red`, `green`, `blue` | SDK result | non-blocking | `robot.cam.detect_line("red")` | Pick the actual line colour in the classroom. |
 | `detect_marker(color="red")` | `red`, `green`, `blue` | SDK result | non-blocking | `robot.cam.detect_marker("red")` | Marker colour must match the printed marker. |
 | `detect_robot()` | none | SDK result | non-blocking | `robot.cam.detect_robot()` | Requires another robot in frame. |
+| `set_line_follow_profile(profile="classroom")` | `classroom`, `balanced`, `sport` | `None` | n/a | `robot.cam.set_line_follow_profile("balanced")` | `classroom` is the safest default for students. |
+| `set_line_follow_speed(speed)` | `0.05..3.5 m/s` | `None` | n/a | `robot.cam.set_line_follow_speed(0.3)` | Use `0.2..0.5` on Wi-Fi for better stability. |
+| `get_line_follow_status()` | none | `dict` | n/a | `print(robot.cam.get_line_follow_status())` | Includes last turn speed, line visibility, and lost-line duration. |
+| `stop_line_follow(stop_robot=True)` | choose whether to send stop command | `None` | immediate | `robot.cam.stop_line_follow()` | Safe way to end line following and detection together. |
 | `set_follow_speed(speed)` | `0.05..3.5 m/s` | `None` | n/a | `robot.cam.set_follow_speed(0.4)` | Keep this slow while tuning. |
-| `set_follow_distance(distance)` | `0.0..1.0` normalized target | `None` | n/a | `robot.cam.set_follow_distance(0.5)` | Use the default unless you are tuning. |
-| `follow(name=None, color="red")` | currently only line following is implemented | SDK result | non-blocking | `robot.cam.follow("line")` | Raises `NotImplementedError` for unsupported targets. |
-| `follow_line(color="red")` | `red`, `green`, `blue` | SDK result | non-blocking | `robot.cam.follow_line()` | Use `stop_detect()` or `robot.stop()` to interrupt. |
+| `set_follow_distance(distance)` | `0.0..1.0` normalized line target (`0.5` center) | `None` | n/a | `robot.cam.set_follow_distance(0.5)` | Advanced target offset tuning. |
+| `follow(name=None, color="red", profile="classroom", speed=None, target="center", stop_on_lost=True, lookahead=3)` | only `line` mode supported | SDK result | non-blocking | `robot.cam.follow("line", speed="slow")` | Raises `NotImplementedError` for unsupported targets. |
+| `follow_line(color="red", speed=None, profile="classroom", target="center", stop_on_lost=True, lookahead=3)` | `color`: `red`, `green`, `blue`; `speed`: `slow`, `medium`, `fast` or float | SDK result | non-blocking | `robot.cam.follow_line(speed="slow")` | Recommended classroom entry point. |
+| `follow_line_easy(color="red", speed="slow")` | kid-friendly alias | SDK result | non-blocking | `robot.cam.follow_line_easy()` | Simplest line-follow call for beginners. |
 | `move_to_marker(marker_type="1", color="red", error=0.06, speed=1.0, min_speed=0.02, target_x=0.0, target_y=0.5)` | normalized frame positions `-1..1`; speed `0.05..3.5 m/s` | SDK subscription result | non-blocking | `robot.cam.move_to_marker("1")` | If the robot never settles, slow it down or widen `error`. |
 
 ## `robot.battery`

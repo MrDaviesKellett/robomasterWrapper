@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
+import time
 import unittest
 import warnings
 
@@ -272,3 +273,53 @@ class PublicApiTests(unittest.TestCase):
 
         self.assertEqual(attempts["n"], 3)
         self.assertEqual(sleep_calls, [0.1, 0.1])
+
+    def test_follow_line_uses_profile_and_speed_presets(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+
+        robot.cam.follow_line_easy(color="blue", speed="slow")
+
+        self.assertEqual(fake.vision.mode, "line")
+        self.assertEqual(fake.vision.color, "blue")
+        self.assertAlmostEqual(robot.cam._line_follow_config["base_speed"], 0.25)
+        self.assertEqual(robot.cam._line_follow_config["profile"], "classroom")
+
+    def test_follow_line_callback_drives_robot_from_line_points(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        robot.cam.follow_line(color="red", speed=0.3, lookahead=2)
+
+        line_info = [
+            (0.54, 0.85, 0.08, 0.0),
+            (0.55, 0.75, 0.1, 0.0),
+            (0.57, 0.65, 0.1, 0.1),
+            (0.6, 0.55, 0.12, 0.2),
+        ]
+        fake.vision.callback(line_info)
+
+        call = fake.chassis.last_call()
+        self.assertEqual(call[0], "drive_speed")
+        self.assertGreater(call[2]["x"], 0.0)
+        self.assertNotEqual(call[2]["z"], 0.0)
+
+    def test_follow_line_callback_accepts_flat_line_packet(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        robot.cam.follow_line(color="red", speed=0.3)
+
+        flat_packet = [10, 1] + [0.52, 0.8, 0.0, 0.0] * 10
+        fake.vision.callback(flat_packet)
+
+        self.assertEqual(fake.chassis.last_call()[0], "drive_speed")
+
+    def test_follow_line_stops_robot_when_line_is_lost_for_too_long(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        robot.cam.follow_line(color="red", speed=0.3, stop_on_lost=True)
+
+        fake.vision.callback([(0.5, 0.8, 0.0, 0.0)])
+        robot.cam._line_follow_state["last_line_time"] = time.monotonic() - 3.0
+        fake.vision.callback([])
+
+        self.assertEqual(fake.chassis.last_call()[0], "drive_wheels")
