@@ -310,10 +310,10 @@ class RoboMaster:
         return self.back(distance=distance, speed=speed, blocking=blocking)
 
     def left(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
-        return self.move(y=-distance, speed=speed, blocking=blocking)
+        return self.move(y=distance, speed=speed, blocking=blocking)
 
     def right(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
-        return self.move(y=distance, speed=speed, blocking=blocking)
+        return self.move(y=-distance, speed=speed, blocking=blocking)
 
     def circle(
         self,
