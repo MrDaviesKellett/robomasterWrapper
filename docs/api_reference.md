@@ -35,20 +35,23 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | --- | --- | --- | --- | --- | --- |
 | `stop()` | none | SDK result | immediate | `robot.stop()` | Use this after any continuous speed command. |
 | `stop_after(duration=1.0, blocking=False)` | `duration`: `0..600 s` | `Timer` or `None` | Optional | `robot.stop_after(2)` | Raises `ValueError` for invalid durations. |
-| `set_speed(x=0.0, y=0.0, z=0.0, timeout=None)` | `x,y`: `-3.5..3.5 m/s`; `z`: `-600..600 deg/s` | SDK result | continuous command, non-blocking | `robot.set_speed(x=0.5)` | Stop with `stop()` if you need to cancel continuous motion. |
+| `set_default_speed(speed=None, turn_speed=None)` | `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | `None` | n/a | `robot.set_default_speed(speed=0.75)` | Changes defaults for future distance moves. Named `speed` and `turn_speed` arguments still override it. |
+| `get_default_speed()` | none | `(speed, turn_speed)` | n/a | `speed, turn = robot.get_default_speed()` | Use when checking current classroom defaults. |
+| `set_speed(...)` | blocked ambiguous name | raises `ValueError` | n/a | n/a | Error message asks whether you meant `set_default_speed(...)` or `continuous_drive(...)`. |
+| `continuous_drive(x=0.0, y=0.0, z=0.0, timeout=None)` | `x,y`: `-3.5..3.5 m/s`; `z`: `-600..600 deg/s` | SDK result | continuous command, non-blocking | `robot.continuous_drive(x=0.5)` | Stop with `stop()` if you need to cancel continuous motion. |
 | `rotate(angular_velocity=0.0, timeout=None)` | `-600..600 deg/s` | SDK result | non-blocking | `robot.rotate(45)` | Use `stop()` or `stop_after()` to end rotation. |
 | `rotate_left(angular_velocity=0.0, timeout=None)` | same as `rotate` | SDK result | non-blocking | `robot.rotate_left(90)` | Same recovery as `rotate`. |
 | `rotate_right(angular_velocity=0.0, timeout=None)` | same as `rotate` | SDK result | non-blocking | `robot.rotate_right(90)` | Same recovery as `rotate`. |
-| `turn(angle=0.0, speed=90.0, blocking=True, timeout=None)` | `angle`: `-1800..1800 deg`; `speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.turn(90)` | Raises `ValueError` on invalid angles or speeds. |
-| `turn_left(angle=0.0, speed=90.0, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_left(90)` | Same recovery as `turn`. |
-| `turn_right(angle=0.0, speed=90.0, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_right(90)` | Same recovery as `turn`. |
+| `turn(angle=0.0, speed=None, blocking=True, timeout=None)` | `angle`: `-1800..1800 deg`; `speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.turn(90)` | Uses default turn speed when `speed` is omitted. |
+| `turn_left(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_left(90)` | Same recovery as `turn`. |
+| `turn_right(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_right(90)` | Same recovery as `turn`. |
 | `set_wheel_rpms(front_right=0, front_left=0, back_right=0, back_left=0, timeout=None)` | each wheel `-1000..1000 rpm` | SDK result | non-blocking | `robot.set_wheel_rpms(100, 100, 100, 100)` | Invalid RPMs raise `ValueError`. |
-| `move(x=0.0, y=0.0, angle=0.0, speed=1.0, turn_speed=90.0, blocking=True, timeout=None)` | `x,y`: `-5..5 m`; `angle`: `-1800..1800 deg`; `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.move(x=0.5, y=0.2)` | Use safe units: metres and degrees. |
-| `forward(distance=0.5, speed=1.0, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.forward(0.5)` | Same validation as `move`. |
-| `back(distance=0.5, speed=1.0, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.back(0.5)` | Same validation as `move`. |
-| `backward(distance=0.5, speed=1.0, blocking=True)` | alias of `back` | SDK action or completed action | Yes by default | `robot.backward(0.5)` | Same validation as `move`. |
-| `left(distance=0.5, speed=1.0, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
-| `right(distance=0.5, speed=1.0, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.right(0.5)` | Same validation as `move`. |
+| `move(x=0.0, y=0.0, angle=0.0, speed=None, turn_speed=None, blocking=True, timeout=None)` | `x,y`: `-5..5 m`; `angle`: `-1800..1800 deg`; `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.move(x=0.5, y=0.2)` | Uses default speeds when omitted; named speed arguments override them. |
+| `forward(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.forward(0.5)` | Same validation as `move`. |
+| `back(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.back(0.5)` | Same validation as `move`. |
+| `backward(distance=0.5, speed=None, blocking=True)` | alias of `back` | SDK action or completed action | Yes by default | `robot.backward(0.5)` | Same validation as `move`. |
+| `left(distance=0.5, speed=None, blocking=True)` | `distance`: metres; positive Y in the SDK | SDK action or completed action | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
+| `right(distance=0.5, speed=None, blocking=True)` | `distance`: metres; negative Y in the SDK | SDK action or completed action | Yes by default | `robot.right(0.5)` | Same validation as `move`. |
 | `circle(radius=0.25, speed=1.0, num_circles=1, blocking=True)` | `radius`: `0.05..5 m`; `speed`: `0.1..2.0 m/s` | `Timer` or `None` | Optional | `robot.circle(0.25, 1.0)` | This uses continuous speed control internally. If the robot drifts, call `stop()`. |
 
 ## `robot.chassis`

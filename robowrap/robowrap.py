@@ -38,6 +38,8 @@ class RoboMaster:
         self.sleep = _sleep
         self.robot = _sdk_robot if _sdk_robot is not None else create_sdk_robot()
         self._mode = "free"
+        self.default_move_speed = 1.0
+        self.default_turn_speed = 90.0
 
         connection = self._normalize_connection_type(conn_type)
         ensure_choice("protocol", protocol.lower(), ("tcp", "udp"))
@@ -201,7 +203,34 @@ class RoboMaster:
         timer.start()
         return timer
 
-    def set_speed(
+    def set_default_speed(
+        self,
+        speed: Optional[float] = None,
+        turn_speed: Optional[float] = None,
+    ) -> None:
+        if speed is not None:
+            self.default_move_speed = ensure_range("speed", speed, 0.5, 2.0, unit="m/s")
+        if turn_speed is not None:
+            self.default_turn_speed = ensure_range("turn_speed", turn_speed, 10.0, 540.0, unit="degrees/second")
+
+    def get_default_speed(self) -> tuple[float, float]:
+        return self.default_move_speed, self.default_turn_speed
+
+    def _move_speed(self, speed: Optional[float]) -> float:
+        return self.default_move_speed if speed is None else speed
+
+    def _turn_speed(self, speed: Optional[float]) -> float:
+        return self.default_turn_speed if speed is None else speed
+
+    def set_speed(self, *args: Any, **kwargs: Any) -> Any:
+        raise ValueError(
+            "set_speed is ambiguous: use set_default_speed(speed=..., turn_speed=...) "
+            "to change the default speed for future move commands, or use "
+            "continuous_drive(x=..., y=..., z=..., timeout=...) to start driving "
+            "continuously now."
+        )
+
+    def continuous_drive(
         self,
         x: float = 0.0,
         y: float = 0.0,
@@ -217,7 +246,7 @@ class RoboMaster:
         return self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
 
     def rotate(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
-        return self.set_speed(z=angular_velocity, timeout=timeout)
+        return self.continuous_drive(z=angular_velocity, timeout=timeout)
 
     def rotate_left(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
         return self.rotate(angular_velocity=abs(angular_velocity), timeout=timeout)
@@ -229,10 +258,11 @@ class RoboMaster:
         self,
         angle: float = 0.0,
         *,
-        speed: float = 90.0,
+        speed: Optional[float] = None,
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
+        speed = self._turn_speed(speed)
         ensure_range("angle", angle, -1800.0, 1800.0, unit="degrees")
         ensure_range("speed", speed, 10.0, 540.0, unit="degrees/second")
         action = self.robot.chassis.move(z=angle, z_speed=speed)
@@ -242,7 +272,7 @@ class RoboMaster:
         self,
         angle: float = 0.0,
         *,
-        speed: float = 90.0,
+        speed: Optional[float] = None,
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
@@ -252,7 +282,7 @@ class RoboMaster:
         self,
         angle: float = 0.0,
         *,
-        speed: float = 90.0,
+        speed: Optional[float] = None,
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
@@ -276,8 +306,8 @@ class RoboMaster:
         return self.robot.chassis.drive_wheels(
             w1=front_right,
             w2=front_left,
-            w3=back_right,
-            w4=back_left,
+            w3=back_left,
+            w4=back_right,
             timeout=timeout,
         )
 
@@ -287,11 +317,13 @@ class RoboMaster:
         y: float = 0.0,
         angle: float = 0.0,
         *,
-        speed: float = 1.0,
-        turn_speed: float = 90.0,
+        speed: Optional[float] = None,
+        turn_speed: Optional[float] = None,
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
+        speed = self._move_speed(speed)
+        turn_speed = self._turn_speed(turn_speed)
         ensure_range("x", x, -5.0, 5.0, unit="m")
         ensure_range("y", y, -5.0, 5.0, unit="m")
         ensure_range("angle", angle, -1800.0, 1800.0, unit="degrees")
@@ -300,20 +332,20 @@ class RoboMaster:
         action = self.robot.chassis.move(x=x, y=y, z=angle, xy_speed=speed, z_speed=turn_speed)
         return self._complete_action(action, blocking=blocking, timeout=timeout)
 
-    def forward(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+    def forward(self, distance: float = 0.5, *, speed: Optional[float] = None, blocking: bool = True) -> Any:
         return self.move(x=distance, speed=speed, blocking=blocking)
 
-    def back(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+    def back(self, distance: float = 0.5, *, speed: Optional[float] = None, blocking: bool = True) -> Any:
         return self.move(x=-distance, speed=speed, blocking=blocking)
 
-    def backward(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+    def backward(self, distance: float = 0.5, *, speed: Optional[float] = None, blocking: bool = True) -> Any:
         return self.back(distance=distance, speed=speed, blocking=blocking)
 
-    def left(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
-        return self.move(y=-distance, speed=speed, blocking=blocking)
-
-    def right(self, distance: float = 0.5, *, speed: float = 1.0, blocking: bool = True) -> Any:
+    def left(self, distance: float = 0.5, *, speed: Optional[float] = None, blocking: bool = True) -> Any:
         return self.move(y=distance, speed=speed, blocking=blocking)
+
+    def right(self, distance: float = 0.5, *, speed: Optional[float] = None, blocking: bool = True) -> Any:
+        return self.move(y=-distance, speed=speed, blocking=blocking)
 
     def circle(
         self,
@@ -328,7 +360,7 @@ class RoboMaster:
         ensure_int_range("num_circles", num_circles, 1, 100)
         angular_velocity = speed / radius * RAD_TO_DEG
         duration = (2 * pi * radius / speed) * 1.5 * num_circles
-        self.set_speed(x=speed, z=angular_velocity)
+        self.continuous_drive(x=speed, z=angular_velocity)
         return self.stop_after(duration, blocking=blocking)
 
     @deprecated_alias("get_module")
@@ -367,8 +399,15 @@ class RoboMaster:
     def stopAfter(self, *args: Any, **kwargs: Any) -> Any:
         return None
 
-    @deprecated_alias("set_speed")
     def setSpeed(self, *args: Any, **kwargs: Any) -> Any:
+        return self.set_speed(*args, **kwargs)
+
+    @deprecated_alias("set_default_speed")
+    def setDefaultSpeed(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    @deprecated_alias("continuous_drive")
+    def continuousDrive(self, *args: Any, **kwargs: Any) -> Any:
         return None
 
     @deprecated_alias("rotate_left")

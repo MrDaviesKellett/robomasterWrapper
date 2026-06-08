@@ -337,7 +337,7 @@ class Camera:
         follow_point = min(5, len(info) - 2)
         tangent_angle = info[follow_point + 1][2]
         turn_speed = self.pid(tangent_angle)
-        self.robomaster.set_speed(x=self.follow_speed, z=turn_speed)
+        self.robomaster.continuous_drive(x=self.follow_speed, z=turn_speed)
         return True
 
     def follow(self, name: Optional[str] = None, color: str = "red") -> Any:
@@ -382,13 +382,13 @@ class Camera:
                     lateral = (x - target_x) * speed
                     if 0 < abs(lateral) < min_speed:
                         lateral = min_speed if lateral > 0 else -min_speed
-                    self.robomaster.set_speed(y=lateral)
+                    self.robomaster.continuous_drive(y=lateral)
                     return False
                 if abs(y - target_y) > error:
                     forward = (target_y - y) * speed
                     if 0 < abs(forward) < min_speed:
                         forward = min_speed if forward > 0 else -min_speed
-                    self.robomaster.set_speed(x=forward)
+                    self.robomaster.continuous_drive(x=forward)
                     return False
                 self.robomaster.stop()
                 self.stop_detect()

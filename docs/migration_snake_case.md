@@ -20,7 +20,7 @@
 | `playSound` | `play_sound` |
 | `setLEDs` | `set_leds` |
 | `stopAfter` | `stop_after` |
-| `setSpeed` | `set_speed` |
+| `setSpeed` | `set_default_speed` for future move defaults, or `continuous_drive` for immediate continuous driving |
 | `rotateLeft` | `rotate_left` |
 | `rotateRight` | `rotate_right` |
 | `turnLeft` | `turn_left` |

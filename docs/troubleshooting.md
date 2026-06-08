@@ -66,7 +66,9 @@
 
 ### The robot keeps moving after a speed command
 
-- `set_speed` is continuous speed control.
+- `continuous_drive` is continuous speed control.
+- `set_default_speed` changes defaults for future move commands.
+- `set_speed` is blocked because the name is ambiguous; its error message points to the two clearer choices.
 - Recovery: call `stop()` or use `stop_after(duration)` if you want timed motion.
 
 ## Invalid parameter errors

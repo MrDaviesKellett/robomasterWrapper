@@ -45,6 +45,7 @@ ALLOWED_LEGACY_NAMES = {
     "setDetectMode",
     "setFollowDistance",
     "setFollowSpeed",
+    "setDefaultSpeed",
     "setLED",
     "setLEDs",
     "setPID",
@@ -57,6 +58,7 @@ ALLOWED_LEGACY_NAMES = {
     "stopDetect",
     "turnLeft",
     "turnRight",
+    "continuousDrive",
     "detectGesture",
     "detectLine",
     "detectMarker",
@@ -168,9 +170,43 @@ class PublicApiTests(unittest.TestCase):
         right_call = fake.chassis.last_call()
 
         self.assertEqual(left_call[0], "move")
-        self.assertEqual(left_call[2]["y"], -0.4)
+        self.assertEqual(left_call[2]["y"], 0.4)
         self.assertEqual(right_call[0], "move")
-        self.assertEqual(right_call[2]["y"], 0.6)
+        self.assertEqual(right_call[2]["y"], -0.6)
+
+    def test_set_speed_error_points_to_clearer_choices(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+
+        with self.assertRaisesRegex(ValueError, "set_default_speed.*continuous_drive"):
+            robot.set_speed(x=0.5)
+        with self.assertRaisesRegex(ValueError, "set_default_speed.*continuous_drive"):
+            robot.setSpeed(x=0.5)
+
+    def test_continuous_drive_wraps_sdk_drive_speed(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+
+        robot.continuous_drive(x=0.5, y=-0.25, z=30)
+
+        self.assertEqual(fake.chassis.last_call()[0], "drive_speed")
+        self.assertEqual(fake.chassis.last_call()[2], {"x": 0.5, "y": -0.25, "z": 30, "timeout": None})
+
+    def test_default_speed_used_when_move_speed_omitted(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+
+        robot.set_default_speed(speed=0.75, turn_speed=120)
+        robot.forward(0.4)
+        forward_call = fake.chassis.last_call()
+        robot.forward(0.4, speed=1.25)
+        explicit_call = fake.chassis.last_call()
+        robot.turn_left(90)
+        turn_call = fake.chassis.last_call()
+
+        self.assertEqual(forward_call[2]["xy_speed"], 0.75)
+        self.assertEqual(explicit_call[2]["xy_speed"], 1.25)
+        self.assertEqual(turn_call[2]["z_speed"], 120)
 
     def test_gun_recenter_uses_timeout_and_fallback_when_action_does_not_complete(self) -> None:
         fake = FakeRobot()

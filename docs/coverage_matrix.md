@@ -42,7 +42,7 @@ Status values:
 
 | Upstream EP API | Wrapper surface | Status | Notes |
 | --- | --- | --- | --- |
-| `drive_speed` | `robot.set_speed(...)` | wrapped | Continuous speed control. |
+| `drive_speed` | `robot.continuous_drive(...)` | wrapped | Continuous speed control. `set_speed(...)` is blocked because students can confuse it with move defaults. |
 | `drive_wheels` | `robot.set_wheel_rpms(...)` | wrapped | Direct wheel control. |
 | `move` | `robot.move(...)`, `forward`, `back`, `left`, `right`, `turn` | wrapped | Position helpers on root object. |
 | `set_pwm_value` | `robot.chassis.set_pwm_value(...)` | wrapped | Advanced expansion control. |
