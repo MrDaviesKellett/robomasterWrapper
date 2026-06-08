@@ -13,7 +13,7 @@ The design goal is the same one shown in [test.py](test.py): students should be 
 
 ## Python support
 
-robowrap now supports modern Python and is packaged for **Python 3.9+**, including **Python 3.14+**.
+robowrap now supports modern Python and is packaged for **Python 3.14+**.
 
 This change was made because the original DJI RoboMaster SDK appears to be unmaintained and still targets older Python releases. To keep the RoboMaster EP usable on current Python versions, robowrap now depends on the maintained [`robomaster-sdk-modern`](https://pypi.org/project/robomaster-sdk-modern/) package instead.
 

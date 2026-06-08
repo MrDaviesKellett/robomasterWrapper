@@ -1,2 +1,8 @@
 dist/
 robowrap.egg-info/
+__pycache__/
+*.py[cod]
+.camera-venv/
+.camera-venv313/
+.camera-venv314/
+.tmp/

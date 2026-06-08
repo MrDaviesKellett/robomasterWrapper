@@ -37,6 +37,23 @@ from .helperFuncs import (
 )
 from .viewer import run_qt_viewer
 
+try:  # pragma: no cover - unavailable in dependency-light unit tests
+    from robomaster import vision as sdk_vision
+except Exception:  # pragma: no cover - exercised when the SDK is absent
+    sdk_vision = None
+
+
+def _sdk_detect_mode(mode: str) -> Any:
+    if sdk_vision is None:
+        return mode
+    return {
+        "person": getattr(sdk_vision, "PERSON", "person"),
+        "gesture": getattr(sdk_vision, "GESTURE", "gesture"),
+        "line": getattr(sdk_vision, "LINE", "line"),
+        "marker": getattr(sdk_vision, "MARKER", "marker"),
+        "robot": getattr(sdk_vision, "ROBOT", "robot"),
+    }[mode]
+
 
 class Camera:
     def __init__(self, robomaster: Any) -> None:
@@ -60,7 +77,7 @@ class Camera:
         self.at_marker = False
         self._debug_items: list[dict[str, Any]] = []
         self._viewer_queue: Optional[Any] = None
-        self._viewer_process: Optional[multiprocessing.Process] = None
+        self._viewer_process: Optional[Any] = None
         self._viewer_thread: Optional[threading.Thread] = None
         self._viewer_stop = threading.Event()
         self._consecutive_frame_failures = 0
@@ -91,7 +108,7 @@ class Camera:
 
     def stop_detect(self) -> None:
         if self.detecting:
-            self.vision.unsub_detect_info(self.detect_mode)
+            self.vision.unsub_detect_info(_sdk_detect_mode(self.detect_mode))
             self.detecting = False
 
     def stop(self) -> Any:
@@ -197,14 +214,22 @@ class Camera:
             return True
         if not self.streaming:
             self.start()
-        context = multiprocessing.get_context("spawn")
-        self._viewer_queue = context.Queue(maxsize=2)
         self._viewer_stop.clear()
-        self._viewer_process = context.Process(
-            target=run_qt_viewer,
-            args=(self._viewer_queue, title, color_format),
-            daemon=True,
-        )
+        try:
+            context = multiprocessing.get_context("spawn")
+            self._viewer_queue = context.Queue(maxsize=2)
+            self._viewer_process = context.Process(
+                target=run_qt_viewer,
+                args=(self._viewer_queue, title, color_format),
+                daemon=True,
+            )
+        except (OSError, PermissionError):
+            self._viewer_queue = queue.Queue(maxsize=2)
+            self._viewer_process = threading.Thread(
+                target=run_qt_viewer,
+                args=(self._viewer_queue, title, color_format),
+                daemon=True,
+            )
         self._viewer_process.start()
         self._viewer_thread = threading.Thread(target=self._viewer_worker, args=(fps,), daemon=True)
         self._viewer_thread.start()
@@ -219,12 +244,20 @@ class Camera:
             try:
                 self._viewer_queue.put_nowait(None)
             except Exception:
-                pass
+                try:
+                    while True:
+                        self._viewer_queue.get_nowait()
+                except Exception:
+                    pass
+                try:
+                    self._viewer_queue.put_nowait(None)
+                except Exception:
+                    pass
         if self._viewer_thread is not None and self._viewer_thread.is_alive():
             self._viewer_thread.join(timeout=1.0)
         if self._viewer_process is not None and self._viewer_process.is_alive():
             self._viewer_process.join(timeout=1.0)
-            if self._viewer_process.is_alive():
+            if self._viewer_process.is_alive() and hasattr(self._viewer_process, "terminate"):
                 self._viewer_process.terminate()
                 self._viewer_process.join(timeout=1.0)
         self._viewer_thread = None
@@ -295,7 +328,7 @@ class Camera:
         if self.detecting:
             self.stop_detect()
         self.detect_mode = mode
-        result = self.vision.sub_detect_info(mode, color, callback)
+        result = self.vision.sub_detect_info(_sdk_detect_mode(mode), color, callback)
         self.detecting = bool(result is not False)
         return result
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.7 - 2026-06-08
+
+- Fixed camera vision subscription helpers to pass the RoboMaster SDK's own detection constants, avoiding SDK parameter errors for `detect_person`, `detect_line`, `detect_marker`, and `detect_robot`.
+- Corrected package metadata so normal installs resolve against `robomaster-sdk-modern>=0.1.1.76`.
+- Updated the Python requirement to 3.14+ to match the modern RoboMaster SDK runtime guard.
+- Added a no-motion camera hardware check script for connection, frame capture, audio, and vision smoke testing.
+
 ## 0.8.6 - 2026-06-08
 
 - Renamed chassis continuous speed control to `continuous_drive(...)`.

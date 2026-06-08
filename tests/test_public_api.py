@@ -160,6 +160,42 @@ class PublicApiTests(unittest.TestCase):
         finally:
             camera_module.importlib.util.find_spec = original_find_spec
 
+    def test_camera_view_falls_back_when_multiprocessing_queue_is_blocked(self) -> None:
+        fake = FakeRobot()
+        fake.camera.next_image = object()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        import robowrap.camera as camera_module
+
+        original_find_spec = camera_module.importlib.util.find_spec
+        original_get_context = camera_module.multiprocessing.get_context
+        original_run_qt_viewer = camera_module.run_qt_viewer
+        viewer_calls: list[tuple[str, str]] = []
+
+        def fake_find_spec(name: str) -> object:
+            if name == "PySide6":
+                return object()
+            return original_find_spec(name)
+
+        def fake_get_context(name: str) -> object:
+            raise PermissionError("pipe blocked")
+
+        def fake_run_qt_viewer(frame_queue, title: str, color_format: str) -> None:  # noqa: ANN001
+            viewer_calls.append((title, color_format))
+            frame_queue.get(timeout=1.0)
+
+        camera_module.importlib.util.find_spec = fake_find_spec
+        camera_module.multiprocessing.get_context = fake_get_context
+        camera_module.run_qt_viewer = fake_run_qt_viewer
+        try:
+            self.assertTrue(robot.cam.view(title="fallback test"))
+            robot.cam.stop_view()
+        finally:
+            camera_module.importlib.util.find_spec = original_find_spec
+            camera_module.multiprocessing.get_context = original_get_context
+            camera_module.run_qt_viewer = original_run_qt_viewer
+
+        self.assertEqual(viewer_calls, [("fallback test", "bgr")])
+
     def test_left_right_map_to_expected_chassis_y_direction(self) -> None:
         fake = FakeRobot()
         robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
@@ -270,6 +306,31 @@ class PublicApiTests(unittest.TestCase):
         stop_calls = [call for call in fake.camera.calls if call[0] == "stop_video_stream"]
         self.assertEqual(len(start_calls), 2)
         self.assertEqual(len(stop_calls), 1)
+
+    def test_camera_detection_uses_sdk_mode_constants(self) -> None:
+        fake = FakeRobot()
+        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
+        import robowrap.camera as camera_module
+
+        class FakeSdkVision:
+            PERSON = object()
+            GESTURE = object()
+            LINE = object()
+            MARKER = object()
+            ROBOT = object()
+
+        original_sdk_vision = camera_module.sdk_vision
+        camera_module.sdk_vision = FakeSdkVision
+        try:
+            robot.cam.detect("person")
+            detect_call = fake.vision.last_call()
+            robot.cam.stop_detect()
+            stop_call = fake.vision.last_call()
+        finally:
+            camera_module.sdk_vision = original_sdk_vision
+
+        self.assertIs(detect_call[1][0], FakeSdkVision.PERSON)
+        self.assertIs(stop_call[1][0], FakeSdkVision.PERSON)
 
     def test_initialize_retries_then_succeeds(self) -> None:
         fake = FakeRobot()
