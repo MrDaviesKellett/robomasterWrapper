@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — version decision pending Martin (recommend 0.9.0)
+
+- RW-01: round recenter speeds to integers before SDK packing.
+- RW-02: blocking actions check failed state as well as wait completion.
+- RW-03: left/right continuous rotation and counter-clockwise circles follow DJI examples; hardware capture pending.
+- RW-04: document continuous axes x forward, y right, z clockwise, distinct from action angle signs.
+- RW-05: remove the circle duration multiplier of 1.5.
+- RW-06: map pulse LEDs to the supported breath effect.
+- RW-07: return None for unacknowledged speed and blaster LED pushes; document stop/circle results.
+- RW-08: validate fire count 1–5.
+- RW-09: default to ap/udp, support SDK connection names and legacy aliases, reject unknown names.
+- RW-10: avoid duplicate initialization reset; retain auto_reset argument for compatibility.
+- RW-11: remove 36 expired legacy aliases and stale warnings; add the missing 0.8.8 entry.
+- RW-12: document the two-joint endpoint teaching surface, validate arm travel, and fix fixed-origin wording and pickup/drop positions.
+- RW-13: make sample arm targets reachable and within wrapper bounds.
+- RW-14: explain default chassis mode ignores yaw and how free/gun mode enables aiming.
+- RW-15: convert UART bytes to bytearray and reject unsafe upstream receive subscriptions.
+- RW-16: correct the historical positive-Y statement.
+- RW-17: remove media queue backpressure during shutdown and restore bounds, preventing stop/close deadlocks.
+
+The version remains 0.8.8 in package metadata until Martin decides between 0.8.9 and 0.9.0. No production publication has been performed.
+
 ## 0.8.8
 
 - Audited baseline release; no separate release notes were recorded.
@@ -63,4 +85,4 @@
 ### Deprecations
 
 - CamelCase and legacy aliases introduced before `0.8.0` are deprecated as of `2026-04-13`.
-- Those aliases are scheduled for removal in `0.9.0`, not before `2026-09-01`.
+- The original removal target was `0.9.0`, not before `2026-09-01`; removal is implemented in the pending release.

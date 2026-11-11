@@ -25,8 +25,8 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `play_audio(path, blocking=False, timeout=None)` | `path`: local WAV file | SDK action or completed action | Optional | `robot.play_audio("hello.wav")` | If the file is missing or invalid, fix the path or format and retry. |
-| `play_sound(sound_id, times=1, blocking=False, timeout=None)` | `times`: `1..10` | SDK action or completed action | Optional | `robot.play_sound(0x101)` | Raises `ValueError` for invalid repeat counts. |
+| `play_audio(path, blocking=False, timeout=None)` | `path`: local WAV file | SDK action (non-blocking) or bool (blocking) | Optional | `robot.play_audio("hello.wav")` | If the file is missing or invalid, fix the path or format and retry. |
+| `play_sound(sound_id, times=1, blocking=False, timeout=None)` | `times`: `1..10` | SDK action (non-blocking) or bool (blocking) | Optional | `robot.play_sound(0x101)` | Raises `ValueError` for invalid repeat counts. |
 | `set_leds(r=0, g=0, b=0, leds="all", effect="on")` | RGB `0..255`; `leds`: `front`, `back`, `left`, `right`, `gun`, `gun_left`, `gun_right`, `all` | SDK result | n/a | `robot.set_leds(255, 0, 0)` | Raises `ValueError` for invalid colours or effect names. |
 
 ### Motion
@@ -38,20 +38,20 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `set_default_speed(speed=None, turn_speed=None)` | `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | `None` | n/a | `robot.set_default_speed(speed=0.75)` | Changes defaults for future distance moves. Named `speed` and `turn_speed` arguments still override it. |
 | `get_default_speed()` | none | `(speed, turn_speed)` | n/a | `speed, turn = robot.get_default_speed()` | Use when checking current classroom defaults. |
 | `set_speed(...)` | blocked ambiguous name | raises `ValueError` | n/a | n/a | Error message asks whether you meant `set_default_speed(...)` or `continuous_drive(...)`. |
-| `continuous_drive(x=0.0, y=0.0, z=0.0, timeout=None)` | `x,y`: `-3.5..3.5 m/s`; `z`: `-600..600 deg/s` | SDK result | continuous command, non-blocking | `robot.continuous_drive(x=0.5)` | Stop with `stop()` if you need to cancel continuous motion. |
-| `rotate(angular_velocity=0.0, timeout=None)` | `-600..600 deg/s` | SDK result | non-blocking | `robot.rotate(45)` | Use `stop()` or `stop_after()` to end rotation. |
-| `rotate_left(angular_velocity=0.0, timeout=None)` | same as `rotate` | SDK result | non-blocking | `robot.rotate_left(90)` | Same recovery as `rotate`. |
-| `rotate_right(angular_velocity=0.0, timeout=None)` | same as `rotate` | SDK result | non-blocking | `robot.rotate_right(90)` | Same recovery as `rotate`. |
-| `turn(angle=0.0, speed=None, blocking=True, timeout=None)` | `angle`: `-1800..1800 deg`; `speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.turn(90)` | Uses default turn speed when `speed` is omitted. |
-| `turn_left(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_left(90)` | Same recovery as `turn`. |
-| `turn_right(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action or completed action | Yes by default | `robot.turn_right(90)` | Same recovery as `turn`. |
+| `continuous_drive(x=0.0, y=0.0, z=0.0, timeout=None)` | `x,y`: `-3.5..3.5 m/s`; `z`: `-600..600 deg/s` | `None` (fire and forget) | continuous command, non-blocking | `robot.continuous_drive(x=0.5)` | Stop with `stop()` if you need to cancel continuous motion. |
+| `rotate(angular_velocity=0.0, timeout=None)` | `-600..600 deg/s` | `None` (fire and forget) | non-blocking | `robot.rotate(45)` | Use `stop()` or `stop_after()` to end rotation. |
+| `rotate_left(angular_velocity=0.0, timeout=None)` | same as `rotate` | `None` (fire and forget) | non-blocking | `robot.rotate_left(90)` | Same recovery as `rotate`. |
+| `rotate_right(angular_velocity=0.0, timeout=None)` | same as `rotate` | `None` (fire and forget) | non-blocking | `robot.rotate_right(90)` | Same recovery as `rotate`. |
+| `turn(angle=0.0, speed=None, blocking=True, timeout=None)` | `angle`: `-1800..1800 deg`; `speed`: `10..540 deg/s` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.turn(90)` | Uses default turn speed when `speed` is omitted. |
+| `turn_left(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.turn_left(90)` | Same recovery as `turn`. |
+| `turn_right(angle=0.0, speed=None, blocking=True, timeout=None)` | same as `turn` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.turn_right(90)` | Same recovery as `turn`. |
 | `set_wheel_rpms(front_right=0, front_left=0, back_right=0, back_left=0, timeout=None)` | each wheel `-1000..1000 rpm` | SDK result | non-blocking | `robot.set_wheel_rpms(100, 100, 100, 100)` | Invalid RPMs raise `ValueError`. |
-| `move(x=0.0, y=0.0, angle=0.0, speed=None, turn_speed=None, blocking=True, timeout=None)` | `x,y`: `-5..5 m`; `angle`: `-1800..1800 deg`; `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | SDK action or completed action | Yes by default | `robot.move(x=0.5, y=0.2)` | Uses default speeds when omitted; named speed arguments override them. |
-| `forward(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.forward(0.5)` | Same validation as `move`. |
-| `back(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.back(0.5)` | Same validation as `move`. |
-| `backward(distance=0.5, speed=None, blocking=True)` | alias of `back` | SDK action or completed action | Yes by default | `robot.backward(0.5)` | Same validation as `move`. |
-| `left(distance=0.5, speed=None, blocking=True)` | `distance`: metres; sends negative SDK y | SDK action or completed action | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
-| `right(distance=0.5, speed=None, blocking=True)` | `distance`: metres; negative Y in the SDK | SDK action or completed action | Yes by default | `robot.right(0.5)` | Same validation as `move`. |
+| `move(x=0.0, y=0.0, angle=0.0, speed=None, turn_speed=None, blocking=True, timeout=None)` | `x,y`: `-5..5 m`; `angle`: `-1800..1800 deg`; `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.move(x=0.5, y=0.2)` | Uses default speeds when omitted; named speed arguments override them. |
+| `forward(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.forward(0.5)` | Same validation as `move`. |
+| `back(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.back(0.5)` | Same validation as `move`. |
+| `backward(distance=0.5, speed=None, blocking=True)` | alias of `back` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.backward(0.5)` | Same validation as `move`. |
+| `left(distance=0.5, speed=None, blocking=True)` | `distance`: metres; sends negative SDK y | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
+| `right(distance=0.5, speed=None, blocking=True)` | `distance`: metres; sends positive SDK y | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.right(0.5)` | Same validation as `move`. |
 | `circle(radius=0.25, speed=1.0, num_circles=1, blocking=True)` | `radius`: `0.05..5 m`; `speed`: `0.1..2.0 m/s` | `Timer` or `None` | Optional | `robot.circle(0.25, 1.0)` | This uses continuous speed control internally. If the robot drifts, call `stop()`. |
 
 ## `robot.chassis`
@@ -83,23 +83,23 @@ The default chassis-led mode ignores gimbal yaw commands. Call `robot.set_robot_
 | --- | --- | --- | --- | --- | --- |
 | `set_leds(r=0, g=0, b=0, leds="gun", effect="on")` | RGB `0..255`; `leds`: `gun`, `gun_left`, `gun_right` | SDK result | n/a | `robot.gun.set_leds(255, 255, 0)` | Invalid LED names or colours raise `ValueError`. |
 | `rotate(pitch_speed=0.0, yaw_speed=0.0)` | each speed `-360..360 deg/s` | SDK result | non-blocking | `robot.gun.rotate(yaw_speed=45)` | Use `recenter()` or another move command to recover orientation. |
-| `move(pitch=0.0, yaw=0.0, pitch_speed=50.0, yaw_speed=50.0, blocking=True, timeout=None)` | `pitch,yaw`: `-55..55 deg`; speeds `0..540 deg/s` | SDK action or completed action | Yes by default | `robot.gun.move(yaw=20)` | Out-of-range values raise `ValueError`. |
-| `move_to(pitch=0.0, yaw=0.0, pitch_speed=50.0, yaw_speed=50.0, blocking=True, timeout=None)` | `pitch`: `-25..30 deg`; `yaw`: `-250..250 deg` | SDK action or completed action | Yes by default | `robot.gun.move_to(yaw=90)` | Use this for startup-relative aiming. |
-| `recenter(pitch_speed=100.0, yaw_speed=100.0, blocking=True, timeout=None)` | speeds `0..540 deg/s` | SDK action or completed action | Yes by default | `robot.gun.recenter()` | Good recovery step if students lose track of gimbal orientation. |
+| `move(pitch=0.0, yaw=0.0, pitch_speed=50.0, yaw_speed=50.0, blocking=True, timeout=None)` | `pitch,yaw`: `-55..55 deg`; speeds `0..540 deg/s` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.gun.move(yaw=20)` | Out-of-range values raise `ValueError`. |
+| `move_to(pitch=0.0, yaw=0.0, pitch_speed=50.0, yaw_speed=50.0, blocking=True, timeout=None)` | `pitch`: `-25..30 deg`; `yaw`: `-250..250 deg` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.gun.move_to(yaw=90)` | Use this for startup-relative aiming. |
+| `recenter(pitch_speed=100.0, yaw_speed=100.0, blocking=True, timeout=8.0)` | speeds `0..540 deg/s` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.gun.recenter()` | Good recovery step if students lose track of gimbal orientation. |
 | `resume()` | none | `bool` | n/a | `robot.gun.resume()` | Use after `suspend()`. |
 | `suspend()` | none | `bool` | n/a | `robot.gun.suspend()` | Leaves the gimbal unpowered. |
 | `fire(fire_type="ir", times=1)` | `fire_type`: `ir` or `water`; `times`: `1..5` | SDK result | n/a | `robot.gun.fire(times=3)` | Raises `ValueError` for invalid fire types or counts. |
-| `set_led(brightness=100, effect="on")` | brightness `0..255`; effect `on` or `off` | SDK result | n/a | `robot.gun.set_led(128)` | Controls the blaster LED, not the top armor LEDs. |
+| `set_led(brightness=100, effect="on")` | brightness `0..255`; effect `on` or `off` | `None` (fire and forget) | n/a | `robot.gun.set_led(128)` | Controls the blaster LED, not the top armor LEDs. |
 | `subscribe_angle(callback, freq=5)` / `unsubscribe_angle()` | `1,5,10,20,50 Hz` | SDK result | non-blocking | `robot.gun.subscribe_angle(print)` | Unsubscribe when done. |
 
 ## `robot.arm`
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `move(x=0, z=0, blocking=True, timeout=None)` | `x`: `-220..220 mm`; `z`: `-150..150 mm` | SDK action or completed action | Yes by default | `robot.arm.move(x=30, z=-20)` | Values are millimetres, not degrees. |
-| `move_to(x=0, z=0, blocking=True, timeout=None)` | `x`: `0..220 mm`; `z`: `0..150 mm` | SDK action or completed action | Yes by default | `robot.arm.move_to(x=0, z=50)` | Use positions relative to the fixed SDK origin. |
-| `recenter(blocking=True, timeout=None)` | none | SDK action or completed action | Yes by default | `robot.arm.recenter()` | Good recovery if the arm position is unknown. |
-| `reset(blocking=True, timeout=None)` | none | SDK action or completed action | Yes by default | `robot.arm.reset()` | Student-safe wrapper for recenter. |
+| `move(x=0, z=0, blocking=True, timeout=None)` | `x`: `-220..220 mm`; `z`: `-150..150 mm` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.arm.move(x=30, z=-20)` | Values are millimetres, not degrees. |
+| `move_to(x=0, z=0, blocking=True, timeout=None)` | `x`: `0..220 mm`; `z`: `0..150 mm` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.arm.move_to(x=0, z=50)` | Use positions relative to the fixed SDK origin. |
+| `recenter(blocking=True, timeout=None)` | none | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.arm.recenter()` | Good recovery if the arm position is unknown. |
+| `reset(blocking=True, timeout=None)` | none | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.arm.reset()` | Student-safe wrapper for recenter. |
 | `subscribe_position(callback, freq=5)` / `unsubscribe_position()` | `1,5,10,20,50 Hz` | SDK result | non-blocking | `robot.arm.subscribe_position(print)` | Unsubscribe when changing callbacks. |
 | `pickup()` | uses built-in sequence | `None` | blocks through the sequence | `robot.arm.pickup()` | Requires the gripper wrapper and a reachable object. |
 | `drop()` | uses built-in sequence | `None` | blocks through the sequence | `robot.arm.drop()` | Use on a clear surface. |
@@ -165,7 +165,7 @@ The default chassis-led mode ignores gimbal yaw commands. Call `robot.set_robot_
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `move_to(index=1, angle=0, blocking=True, timeout=None)` | `index`: `1..3`; `angle`: `-180..180 deg` | SDK action or completed action | Yes by default | `robot.servo.move_to(1, 45)` | Invalid indexes or angles raise `ValueError`. |
+| `move_to(index=1, angle=0, blocking=True, timeout=None)` | `index`: `1..3`; `angle`: `-180..180 deg` | SDK action (non-blocking) or bool (blocking) | Yes by default | `robot.servo.move_to(1, 45)` | Invalid indexes or angles raise `ValueError`. |
 | `set_speed(index=1, speed=0)` | `index`: `1..3`; `speed`: `-49..49` | SDK result | non-blocking | `robot.servo.set_speed(1, 10)` | Reduce speed if the servo binds. |
 | `pause(index=1)` | `index`: `1..3` | SDK result | immediate | `robot.servo.pause(1)` |  |
 | `get_angle(index=1)` | `index`: `1..3` | angle value | n/a | `print(robot.servo.get_angle(1))` |  |
@@ -218,3 +218,5 @@ SDK initialization already resets modules. The compatibility `auto_reset` argume
 The stock EP arm has two coupled joints. The teaching API commands the gripper endpoint x (forward) and z (up) in millimetres; individual shoulder/elbow joints, base yaw, and wrist roll are not controllable through this surface. Relative move limits describe displacements and do not guarantee a reachable endpoint from every starting position.
 
 Camera stop and robot close handle full SDK media queues without waiting forever. Shutdown temporarily lifts queue bounds so decoder completion and disconnect sentinels can proceed, then restores them for restart. This uses the SDK LiveView queue internals until upstream shutdown is fixed; normal streaming keeps its existing bounds.
+
+Blocking action results are `True` only when waiting completed and the SDK action did not fail; timeout or failed state returns `False`. Non-blocking calls return the SDK action unchanged. `pulse` is an alias for the supported `breath` LED effect.

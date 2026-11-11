@@ -119,7 +119,7 @@ Status values:
 | `armor.set_hit_sensitivity` | `robot.armor.set_hit_sensitivity(...)` | wrapped | |
 | `uart.serial_param_set` | `robot.uart.configure(...)` | wrapped | |
 | `uart.serial_send_msg` | `robot.uart.send(...)` | wrapped | |
-| `uart.sub_serial_msg` / `unsub_serial_msg` | `robot.uart.subscribe()` / `unsubscribe()` | wrapped | |
+| `uart.sub_serial_msg` / `unsub_serial_msg` | `robot.uart.subscribe()` raises `NotImplementedError`; `unsubscribe()` available for cleanup | intentionally_omitted | Upstream SDK receive crashes on send ACKs. |
 | `uart.serial_read_data` | none | intentionally_omitted | Upstream implementation is incomplete. |
 | `ai_module.init_ai_module` | `robot.ai_module.initialize()` | wrapped | |
 | `ai_module.sub_ai_event` / `unsub_ai_event` | `robot.ai_module.subscribe()` / `unsubscribe()` | wrapped | |

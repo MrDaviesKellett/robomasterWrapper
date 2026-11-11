@@ -84,3 +84,5 @@ robot.gun.move_to(yaw=90)
 ```
 
 Connection defaults now match SDK names and transport: `ap` / `udp`. `device`, `station`, `usb` remain connection aliases. Continuous chassis axes are x forward, y right, z clockwise; `turn` and `move(angle=...)` remain counter-clockwise-positive. Left/right rotation helpers now follow their names and circles run counter-clockwise. Hardware capture is pending. Fire counts are 1–5.
+
+Blocking actions now return `False` on failed SDK action state. Push chassis speed and blaster LED commands return `None` (fire and forget). `pulse` uses the SDK breath effect. UART bytes are supported; UART `subscribe` raises `NotImplementedError` while upstream receive is broken. Absolute arm endpoint ranges are x 0–220 mm, z 0–150 mm, relative ranges x ±220 mm and z ±150 mm. Initialization no longer repeats the SDK reset. Camera stop/close handles full video and audio queues.
