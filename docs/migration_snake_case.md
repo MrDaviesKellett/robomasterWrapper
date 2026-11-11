@@ -81,3 +81,5 @@ robot.cam.set_vision_debug(True)
 robot.arm.move_to(x=0, z=50)
 robot.gun.move_to(yaw=90)
 ```
+
+Connection defaults now match SDK names and transport: `ap` / `udp`. `device`, `station`, `usb` remain connection aliases. Continuous chassis axes are x forward, y right, z clockwise; `turn` and `move(angle=...)` remain counter-clockwise-positive. Left/right rotation helpers now follow their names and circles run counter-clockwise. Hardware capture is pending. Fire counts are 1–5.

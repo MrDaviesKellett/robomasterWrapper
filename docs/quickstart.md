@@ -14,7 +14,7 @@ As coverage expands, the same rule applies everywhere in robowrap:
 
 ## First robot interaction
 
-1. Power on the RoboMaster EP and connect it in `device` or `usb` mode.
+1. Power on the RoboMaster EP and connect it in Wi-Fi direct (`ap`), Wi-Fi networking (`sta`), or USB (`rndis`) mode.
 2. Install a modern Python version such as Python 3.14 and install `robomaster-sdk-modern` with `robowrap`.
 3. Run the example below.
 
@@ -63,3 +63,5 @@ robot.close()
 - Learn the full surface in [api_reference.md](api_reference.md)
 - Check old-to-new naming in [migration_snake_case.md](migration_snake_case.md)
 - Use [troubleshooting.md](troubleshooting.md) if connection, stream, or vision setup fails
+
+`RoboMaster()` defaults to `conn_type="ap", protocol="udp"`. Use `RoboMaster(conn_type="sta", protocol="udp")` for Wi-Fi networking. Legacy aliases `device`, `station`, `usb` map to `ap`, `sta`, `rndis`.

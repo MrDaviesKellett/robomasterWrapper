@@ -12,7 +12,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `RoboMaster(conn_type="device", protocol="tcp", serial=None, auto_reset=True, default_mode="chassis")` | `conn_type`: `device`, `station`, `usb`; `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. |
+| `RoboMaster(conn_type="ap", protocol="udp", serial=None, auto_reset=True, default_mode="chassis")` | `conn_type`: `ap`, `sta`, `rndis` (aliases: `device`, `station`, `usb`); `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. |
 | `close()` | none | SDK close result | n/a | `robot.close()` | Use this at the end of every script so streams and movement stop cleanly. |
 | `reset()` | none | SDK reset result | SDK-defined | `robot.reset()` | If reset appears slow, wait a moment before the next command. |
 | `get_module(module)` | `module`: names like `cam`, `gun`, `arm`, `battery`, `chassis` | wrapper object or raw advanced module | n/a | `camera = robot.get_module("cam")` | Raises `ValueError` for unknown module names. |
@@ -50,7 +50,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `forward(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.forward(0.5)` | Same validation as `move`. |
 | `back(distance=0.5, speed=None, blocking=True)` | `distance`: metres | SDK action or completed action | Yes by default | `robot.back(0.5)` | Same validation as `move`. |
 | `backward(distance=0.5, speed=None, blocking=True)` | alias of `back` | SDK action or completed action | Yes by default | `robot.backward(0.5)` | Same validation as `move`. |
-| `left(distance=0.5, speed=None, blocking=True)` | `distance`: metres; positive Y in the SDK | SDK action or completed action | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
+| `left(distance=0.5, speed=None, blocking=True)` | `distance`: metres; sends negative SDK y | SDK action or completed action | Yes by default | `robot.left(0.5)` | Same validation as `move`. |
 | `right(distance=0.5, speed=None, blocking=True)` | `distance`: metres; negative Y in the SDK | SDK action or completed action | Yes by default | `robot.right(0.5)` | Same validation as `move`. |
 | `circle(radius=0.25, speed=1.0, num_circles=1, blocking=True)` | `radius`: `0.05..5 m`; `speed`: `0.1..2.0 m/s` | `Timer` or `None` | Optional | `robot.circle(0.25, 1.0)` | This uses continuous speed control internally. If the robot drifts, call `stop()`. |
 
@@ -206,3 +206,5 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | --- | --- | --- | --- | --- | --- |
 | `initialize()` | none | SDK result | non-blocking | `robot.ai_module.initialize()` | Use before subscribing if you want explicit setup. |
 | `subscribe(callback)` / `unsubscribe()` | none | SDK result | non-blocking | `robot.ai_module.subscribe(print)` | If no events arrive, confirm the AI module is attached and initialized. |
+
+Chassis signs follow DJI examples: x is forward and y is right for both `move` and `continuous_drive`. Continuous z (`continuous_drive`, `rotate`) is clockwise-positive; action angles (`turn`, `move(angle=...)`) are counter-clockwise-positive. `rotate_left` sends negative z, `rotate_right` positive z; `circle` travels counter-clockwise. Hardware capture remains pending. Connection defaults are AP (`ap`) and UDP; unknown connection names raise `ValueError`.

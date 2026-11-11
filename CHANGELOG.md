@@ -12,7 +12,7 @@
 - Renamed chassis continuous speed control to `continuous_drive(...)`.
 - Changed ambiguous `set_speed(...)` and legacy `setSpeed(...)` to raise a clear error pointing students to `set_default_speed(...)` or `continuous_drive(...)`.
 - Added `set_default_speed(...)` for distance move defaults while keeping named `speed` and `turn_speed` arguments as per-command overrides.
-- Fixed left/right distance movement to match the RoboMaster SDK coordinate system: positive Y moves left.
+- Fixed left/right distance movement to match the RoboMaster SDK coordinate system: SDK `move` y is positive to the right; `left()` sends negative y.
 - Corrected chassis rear wheel RPM mapping to SDK wheel order.
 
 ## 0.8.5 - 2026-04-23

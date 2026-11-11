@@ -5,7 +5,7 @@
 ### `Robot could not be connected`
 
 - Check that the EP is powered on.
-- Confirm the connection mode matches your code: `device` maps to AP mode and `usb` maps to RNDIS.
+- Confirm the connection mode matches your code: primary modes are `ap` (Wi-Fi direct), `sta` (Wi-Fi networking), and `rndis` (USB). Aliases `device`, `station`, `usb` are accepted; typos raise `ValueError`. UDP is the default protocol.
 - If you are using a specific serial number, confirm it matches the robot.
 - Recovery: restart the robot, reconnect Wi-Fi or USB, and run the script again.
 

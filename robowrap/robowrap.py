@@ -24,8 +24,8 @@ RAD_TO_DEG = 180.0 / pi
 class RoboMaster:
     def __init__(
         self,
-        conn_type: str = "device",
-        protocol: str = "tcp",
+        conn_type: str = "ap",
+        protocol: str = "udp",
         serial: Optional[str] = None,
         *,
         auto_reset: bool = True,
@@ -94,7 +94,8 @@ class RoboMaster:
             "rndis": "rndis",
             "usb": "rndis",
         }
-        return mapping.get(conn_type.lower(), "ap")
+        ensure_choice("conn_type", conn_type.lower(), tuple(mapping))
+        return mapping[conn_type.lower()]
 
     def _complete_action(self, action: Any, *, blocking: bool = True, timeout: Optional[float] = None) -> Any:
         return wait_for_action(action, blocking=blocking, timeout=timeout)
@@ -238,6 +239,7 @@ class RoboMaster:
         *,
         timeout: Optional[float] = None,
     ) -> Any:
+        # Hardware-capture pending: DJI examples use x forward, y right, z clockwise.
         ensure_range("x", x, -3.5, 3.5, unit="m/s")
         ensure_range("y", y, -3.5, 3.5, unit="m/s")
         ensure_range("z", z, -600.0, 600.0, unit="degrees/second")
@@ -246,13 +248,14 @@ class RoboMaster:
         return self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
 
     def rotate(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
+        """Rotate continuously; positive velocity is clockwise (DJI drive_speed)."""
         return self.continuous_drive(z=angular_velocity, timeout=timeout)
 
     def rotate_left(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
-        return self.rotate(angular_velocity=abs(angular_velocity), timeout=timeout)
+        return self.rotate(angular_velocity=-abs(angular_velocity), timeout=timeout)
 
     def rotate_right(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
-        return self.rotate(angular_velocity=-abs(angular_velocity), timeout=timeout)
+        return self.rotate(angular_velocity=abs(angular_velocity), timeout=timeout)
 
     def turn(
         self,
@@ -358,7 +361,7 @@ class RoboMaster:
         ensure_range("radius", radius, 0.05, 5.0, unit="m")
         ensure_range("speed", speed, 0.1, 2.0, unit="m/s")
         ensure_int_range("num_circles", num_circles, 1, 100)
-        angular_velocity = speed / radius * RAD_TO_DEG
+        angular_velocity = -speed / radius * RAD_TO_DEG
         duration = (2 * pi * radius / speed) * num_circles
         self.continuous_drive(x=speed, z=angular_velocity)
         return self.stop_after(duration, blocking=blocking)

@@ -206,9 +206,9 @@ class PublicApiTests(unittest.TestCase):
         right_call = fake.chassis.last_call()
 
         self.assertEqual(left_call[0], "move")
-        self.assertEqual(left_call[2]["y"], 0.4)
+        self.assertEqual(left_call[2]["y"], -0.4)
         self.assertEqual(right_call[0], "move")
-        self.assertEqual(right_call[2]["y"], -0.6)
+        self.assertEqual(right_call[2]["y"], 0.6)
 
     def test_set_speed_error_points_to_clearer_choices(self) -> None:
         fake = FakeRobot()
