@@ -17,8 +17,8 @@ robot.cam.debug_mode = "verbose"
 robot.arm.move_to(x=0, z=50)
 robot.arm.gripper.open()
 sleep(1.5)
-robot.arm.move(x=175, z=-250)
-robot.arm.move_to(x=175, z=-20)
+robot.arm.move_to(x=175, z=0)
+robot.arm.move_to(x=175, z=20)
 
 robot.cam.start()
 sleep(0.1)
