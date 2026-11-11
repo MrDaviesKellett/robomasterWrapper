@@ -81,9 +81,8 @@ def wait_for_action(action: Any, blocking: bool = True, timeout: Optional[float]
     waiter = getattr(action, "wait_for_completed", None)
     if not callable(waiter):
         return action
-    if timeout is None:
-        return waiter()
-    return waiter(timeout)
+    completed = waiter() if timeout is None else waiter(timeout)
+    return bool(completed) and not getattr(action, "has_failed", False)
 
 
 def deprecated_alias(new_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
