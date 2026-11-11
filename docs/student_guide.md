@@ -117,5 +117,5 @@ robot.close()
 
 - Use `robot.move(x=..., y=...)` for more exact movement.
 - Use `robot.cam.follow_line()` for line following.
-- Use `robot.gun.move_to()` to control the gimbal.
+- Use `robot.gun.move_to()` to control the gimbal. The default `chassis` mode holds yaw at zero; call `robot.set_robot_mode("free")` or `robot.set_robot_mode("gun")` before aiming left or right. Pitch works in chassis mode.
 - Use the [API reference](api_reference.md) when you need more options.

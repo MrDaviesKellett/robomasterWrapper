@@ -77,6 +77,8 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 ## `robot.gun`
 
+The default chassis-led mode ignores gimbal yaw commands. Call `robot.set_robot_mode("free")` or `robot.set_robot_mode("gun")` before using yaw in `rotate`, `move`, or `move_to`; pitch works in chassis mode.
+
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
 | `set_leds(r=0, g=0, b=0, leds="gun", effect="on")` | RGB `0..255`; `leds`: `gun`, `gun_left`, `gun_right` | SDK result | n/a | `robot.gun.set_leds(255, 255, 0)` | Invalid LED names or colours raise `ValueError`. |
