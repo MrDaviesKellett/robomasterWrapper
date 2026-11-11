@@ -116,7 +116,7 @@ class Gun:
 
     def fire(self, fire_type: str = "ir", times: int = 1) -> Any:
         ensure_choice("fire_type", fire_type, ("ir", "water"))
-        ensure_int_range("times", times, 1, 8)
+        ensure_int_range("times", times, 1, 5)
         return self.robot.blaster.fire(fire_type=fire_type, times=times)
 
     def set_led(self, brightness: int = 100, effect: str = "on") -> Any:

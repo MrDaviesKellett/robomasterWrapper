@@ -86,7 +86,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `recenter(pitch_speed=100.0, yaw_speed=100.0, blocking=True, timeout=None)` | speeds `0..540 deg/s` | SDK action or completed action | Yes by default | `robot.gun.recenter()` | Good recovery step if students lose track of gimbal orientation. |
 | `resume()` | none | `bool` | n/a | `robot.gun.resume()` | Use after `suspend()`. |
 | `suspend()` | none | `bool` | n/a | `robot.gun.suspend()` | Leaves the gimbal unpowered. |
-| `fire(fire_type="ir", times=1)` | `fire_type`: `ir` or `water`; `times`: `1..8` | SDK result | n/a | `robot.gun.fire(times=3)` | Raises `ValueError` for invalid fire types or counts. |
+| `fire(fire_type="ir", times=1)` | `fire_type`: `ir` or `water`; `times`: `1..5` | SDK result | n/a | `robot.gun.fire(times=3)` | Raises `ValueError` for invalid fire types or counts. |
 | `set_led(brightness=100, effect="on")` | brightness `0..255`; effect `on` or `off` | SDK result | n/a | `robot.gun.set_led(128)` | Controls the blaster LED, not the top armor LEDs. |
 | `subscribe_angle(callback, freq=5)` / `unsubscribe_angle()` | `1,5,10,20,50 Hz` | SDK result | non-blocking | `robot.gun.subscribe_angle(print)` | Unsubscribe when done. |
 
