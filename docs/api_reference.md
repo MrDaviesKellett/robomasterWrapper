@@ -208,3 +208,5 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `subscribe(callback)` / `unsubscribe()` | none | SDK result | non-blocking | `robot.ai_module.subscribe(print)` | If no events arrive, confirm the AI module is attached and initialized. |
 
 Chassis signs follow DJI examples: x is forward and y is right for both `move` and `continuous_drive`. Continuous z (`continuous_drive`, `rotate`) is clockwise-positive; action angles (`turn`, `move(angle=...)`) are counter-clockwise-positive. `rotate_left` sends negative z, `rotate_right` positive z; `circle` travels counter-clockwise. Hardware capture remains pending. Connection defaults are AP (`ap`) and UDP; unknown connection names raise `ValueError`.
+
+Push commands `continuous_drive`, `rotate`, `rotate_left`, `rotate_right`, and `gun.set_led` return `None`: they are fire and forget and the robot supplies no acknowledgement. `stop()` returns only the wheel command result; it cannot confirm the chassis speed push. `circle` returns its stop timer or `None`, rather than a delivery status.

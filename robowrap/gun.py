@@ -122,7 +122,8 @@ class Gun:
     def set_led(self, brightness: int = 100, effect: str = "on") -> Any:
         ensure_int_range("brightness", brightness, 0, 255)
         ensure_choice("effect", effect, ("on", "off"))
-        return self.robot.blaster.set_led(brightness=brightness, effect=effect)
+        self.robot.blaster.set_led(brightness=brightness, effect=effect)
+        return None
 
     def subscribe_angle(self, callback: Callable[..., Any], freq: int = 5) -> Any:
         ensure_choice("freq", freq, (1, 5, 10, 20, 50))

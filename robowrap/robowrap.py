@@ -245,7 +245,8 @@ class RoboMaster:
         ensure_range("z", z, -600.0, 600.0, unit="degrees/second")
         if timeout is not None:
             ensure_range("timeout", timeout, 0.0, 600.0, unit="seconds")
-        return self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
+        self.robot.chassis.drive_speed(x=x, y=y, z=z, timeout=timeout)
+        return None
 
     def rotate(self, angular_velocity: float = 0.0, *, timeout: Optional[float] = None) -> Any:
         """Rotate continuously; positive velocity is clockwise (DJI drive_speed)."""
