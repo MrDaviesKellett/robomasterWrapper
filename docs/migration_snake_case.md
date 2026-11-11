@@ -3,9 +3,9 @@
 ## Policy
 
 - `snake_case` is now the only supported primary public API style.
-- Legacy camelCase and mixed-case names still work in `0.8.x`.
-- Every legacy alias emits `DeprecationWarning`.
-- Removal target: `0.9.0`, not before `2026-09-01`.
+- Legacy camelCase and mixed-case aliases have been removed in the pending release.
+- Calls using removed names raise `AttributeError`.
+- Release version awaits Martin’s decision; 0.9.0 is recommended for this breaking change.
 
 ## Top-level `RoboMaster`
 
@@ -19,6 +19,7 @@
 | `playAudio` | `play_audio` |
 | `playSound` | `play_sound` |
 | `setLEDs` | `set_leds` |
+| `continuousDrive` | `continuous_drive` |
 | `stopAfter` | `stop_after` |
 | `setSpeed` | `set_default_speed` for future move defaults, or `continuous_drive` for immediate continuous driving |
 | `rotateLeft` | `rotate_left` |

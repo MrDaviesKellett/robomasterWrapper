@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional
 
-from .helperFuncs import deprecated_alias, ensure_choice, ensure_int_range
+from .helperFuncs import ensure_choice, ensure_int_range
 
 
 class Arm:
@@ -76,10 +76,6 @@ class Arm:
         self.robomaster.sleep(1.5)
         self.move_to(x=0, z=50)
         self.gripper.pause()
-
-    @deprecated_alias("move_to")
-    def moveTo(self, *args: Any, **kwargs: Any) -> Any:
-        return None
 
 
 class Gripper:

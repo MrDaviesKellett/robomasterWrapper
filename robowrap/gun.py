@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional
 
 from ._sdk import LED_COMPONENTS, LED_EFFECTS
-from .helperFuncs import deprecated_alias, ensure_choice, ensure_int_range, ensure_range
+from .helperFuncs import ensure_choice, ensure_int_range, ensure_range
 
 
 class Gun:
@@ -131,15 +131,3 @@ class Gun:
 
     def unsubscribe_angle(self) -> Any:
         return self.robot.gimbal.unsub_angle()
-
-    @deprecated_alias("set_leds")
-    def setLEDs(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("move_to")
-    def moveto(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_led")
-    def setLED(self, *args: Any, **kwargs: Any) -> Any:
-        return None

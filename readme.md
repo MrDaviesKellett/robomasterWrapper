@@ -31,8 +31,8 @@ python -m pip install robowrap
 ## Snake_case policy
 
 - The public wrapper API is now `snake_case` only.
-- Legacy camelCase and mixed-case names still work for one transition release and emit `DeprecationWarning`.
-- Those aliases are scheduled for removal in `0.9.0`, not before `2026-09-01`.
+- Legacy camelCase and mixed-case aliases have been removed; see the migration table.
+- The ambiguous `setSpeed` spelling remains an error directing callers to explicit speed APIs.
 
 ## Start here
 

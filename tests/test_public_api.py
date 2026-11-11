@@ -28,44 +28,7 @@ except ImportError:  # pragma: no cover - fallback for plain unittest discovery
 
 
 SNAKE_CASE = re.compile(r"^[a-z_][a-z0-9_]*$")
-ALLOWED_LEGACY_NAMES = {
-    "display",
-    "getModule",
-    "getRobotMode",
-    "getSN",
-    "getVersion",
-    "moveTo",
-    "moveToMarker",
-    "moveto",
-    "playAudio",
-    "playSound",
-    "rotateLeft",
-    "rotateRight",
-    "setDebugColor",
-    "setDetectMode",
-    "setFollowDistance",
-    "setFollowSpeed",
-    "setDefaultSpeed",
-    "setLED",
-    "setLEDs",
-    "setPID",
-    "setResolution",
-    "setRobotMode",
-    "setSpeed",
-    "setVisionDebug",
-    "setWheelRPMs",
-    "stopAfter",
-    "stopDetect",
-    "turnLeft",
-    "turnRight",
-    "continuousDrive",
-    "detectGesture",
-    "detectLine",
-    "detectMarker",
-    "detectPerson",
-    "detectRobot",
-    "followLine",
-}
+ALLOWED_LEGACY_NAMES = {"setSpeed"}
 
 
 class PublicApiTests(unittest.TestCase):
@@ -114,22 +77,11 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(fake.gripper.last_call()[0], "close")
         self.assertEqual(fake.calls[-1][0], "close")
 
-    def test_deprecated_aliases_warn_and_delegate(self) -> None:
-        fake = FakeRobot()
-        robot = RoboMaster(_sdk_robot=fake, _sleep=lambda _: None)
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always", DeprecationWarning)
-            robot.setRobotMode("gun")
-            robot.arm.moveTo(x=10, z=20)
-            robot.cam.setVisionDebug(True)
-            robot.gun.setLED(64)
-
-        self.assertEqual(len(caught), 4)
-        self.assertTrue(all(item.category is DeprecationWarning for item in caught))
-        self.assertEqual(fake.calls[-1][0], "set_robot_mode")
-        self.assertEqual(fake.robotic_arm.last_call()[0], "moveto")
-        self.assertEqual(fake.blaster.last_call()[0], "set_led")
+    def test_legacy_aliases_are_removed(self) -> None:
+        robot = RoboMaster(_sdk_robot=FakeRobot(), _sleep=lambda _: None)
+        for obj, name in [(robot, "setRobotMode"), (robot.arm, "moveTo"),
+                          (robot.cam, "display"), (robot.gun, "moveto")]:
+            self.assertFalse(hasattr(obj, name))
 
     def test_camera_frame_reads_latest_image(self) -> None:
         fake = FakeRobot()

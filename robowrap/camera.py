@@ -30,7 +30,6 @@ except ImportError:  # pragma: no cover - exercised in tests without the depende
             return output
 
 from .helperFuncs import (
-    deprecated_alias,
     ensure_choice,
     ensure_color,
     ensure_range,
@@ -452,67 +451,3 @@ class Camera:
         ensure_range("seconds", seconds, 0.1, 600.0, unit="seconds")
         ensure_choice("sample_rate", sample_rate, (8000, 16000, 32000, 44100, 48000))
         return self.camera.record_audio(save_file=save_file, seconds=seconds, sample_rate=sample_rate)
-
-    @deprecated_alias("set_resolution")
-    def setResolution(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("stop_detect")
-    def stopDetect(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_pid")
-    def setPID(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_detect_mode")
-    def setDetectMode(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_vision_debug")
-    def setVisionDebug(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_debug_color")
-    def setDebugColor(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("detect_person")
-    def detectPerson(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("detect_gesture")
-    def detectGesture(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("detect_line")
-    def detectLine(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("detect_marker")
-    def detectMarker(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("detect_robot")
-    def detectRobot(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_follow_speed")
-    def setFollowSpeed(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_follow_distance")
-    def setFollowDistance(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("follow_line")
-    def followLine(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("move_to_marker")
-    def moveToMarker(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("view")
-    def display(self, *args: Any, **kwargs: Any) -> Any:
-        return None

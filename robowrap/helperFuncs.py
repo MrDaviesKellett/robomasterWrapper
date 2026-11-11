@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import functools
 import re
-import warnings
 from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
 Number = Union[int, float]
@@ -84,25 +82,3 @@ def wait_for_action(action: Any, blocking: bool = True, timeout: Optional[float]
     completed = waiter() if timeout is None else waiter(timeout)
     return bool(completed) and not getattr(action, "has_failed", False)
 
-
-def deprecated_alias(new_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    """Build a deprecated alias that forwards to a snake_case method."""
-
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        old_name = func.__name__
-
-        @functools.wraps(func)
-        def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-            warnings.warn(
-                (
-                    f"{old_name} is deprecated and will be removed in robowrap 0.9.0 "
-                    f"on 2026-09-01. Use {new_name} instead."
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return getattr(self, new_name)(*args, **kwargs)
-
-        return wrapper
-
-    return decorator

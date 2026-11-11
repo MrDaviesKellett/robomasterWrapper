@@ -10,7 +10,6 @@ from .arm import Arm, Gripper
 from .camera import Camera
 from .gun import Gun
 from .helperFuncs import (
-    deprecated_alias,
     ensure_choice,
     ensure_int_range,
     ensure_range,
@@ -367,69 +366,5 @@ class RoboMaster:
         self.continuous_drive(x=speed, z=angular_velocity)
         return self.stop_after(duration, blocking=blocking)
 
-    @deprecated_alias("get_module")
-    def getModule(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_robot_mode")
-    def setRobotMode(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("get_robot_mode")
-    def getRobotMode(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("get_sn")
-    def getSN(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("get_version")
-    def getVersion(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("play_audio")
-    def playAudio(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("play_sound")
-    def playSound(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_leds")
-    def setLEDs(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("stop_after")
-    def stopAfter(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
     def setSpeed(self, *args: Any, **kwargs: Any) -> Any:
         return self.set_speed(*args, **kwargs)
-
-    @deprecated_alias("set_default_speed")
-    def setDefaultSpeed(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("continuous_drive")
-    def continuousDrive(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("rotate_left")
-    def rotateLeft(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("rotate_right")
-    def rotateRight(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("turn_left")
-    def turnLeft(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("turn_right")
-    def turnRight(self, *args: Any, **kwargs: Any) -> Any:
-        return None
-
-    @deprecated_alias("set_wheel_rpms")
-    def setWheelRPMs(self, *args: Any, **kwargs: Any) -> Any:
-        return None

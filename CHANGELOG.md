@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.8
+
+- Audited baseline release; no separate release notes were recorded.
+
+
 ## 0.8.7 - 2026-06-08
 
 - Fixed camera vision subscription helpers to pass the RoboMaster SDK's own detection constants, avoiding SDK parameter errors for `detect_person`, `detect_line`, `detect_marker`, and `detect_robot`.
