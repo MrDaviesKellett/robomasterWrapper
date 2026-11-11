@@ -359,7 +359,7 @@ class RoboMaster:
         ensure_range("speed", speed, 0.1, 2.0, unit="m/s")
         ensure_int_range("num_circles", num_circles, 1, 100)
         angular_velocity = speed / radius * RAD_TO_DEG
-        duration = (2 * pi * radius / speed) * 1.5 * num_circles
+        duration = (2 * pi * radius / speed) * num_circles
         self.continuous_drive(x=speed, z=angular_velocity)
         return self.stop_after(duration, blocking=blocking)
 
