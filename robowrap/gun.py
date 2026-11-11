@@ -92,7 +92,9 @@ class Gun:
     ) -> Any:
         ensure_range("pitch_speed", pitch_speed, 0.0, 540.0, unit="degrees/second")
         ensure_range("yaw_speed", yaw_speed, 0.0, 540.0, unit="degrees/second")
-        action = self.robot.gimbal.recenter(pitch_speed=pitch_speed, yaw_speed=yaw_speed)
+        action = self.robot.gimbal.recenter(
+            pitch_speed=int(round(pitch_speed)), yaw_speed=int(round(yaw_speed))
+        )
         result = self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
         if not blocking or result is not False:
             return result
