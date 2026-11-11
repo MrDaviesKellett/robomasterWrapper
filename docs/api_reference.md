@@ -197,8 +197,8 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
 | `configure(...)` | baud preset `0..4`; data bits `0..3`; buffers `1..4096` | SDK result | n/a | `robot.uart.configure(baud_rate=0)` | Use the default serial settings unless your extension board needs something else. |
-| `send(payload)` | string, dict, tuple, or bytearray | SDK result | non-blocking | `robot.uart.send("hello")` | If a payload fails, simplify it to bytes or text first. |
-| `subscribe(callback)` / `unsubscribe()` | none | SDK result | non-blocking | `robot.uart.subscribe(print)` | UART support depends on a correctly configured extension chain. |
+| `send(payload)` | string, bytes, dict, tuple, or bytearray | SDK result | non-blocking | `robot.uart.send("hello")` | If a payload fails, simplify it to bytes or text first. |
+| `subscribe(callback)` / `unsubscribe()` | none | SDK result | non-blocking | `robot.uart.subscribe(print)` | `subscribe` raises `NotImplementedError`: the upstream SDK receive path is broken. |
 
 ## `robot.ai_module`
 

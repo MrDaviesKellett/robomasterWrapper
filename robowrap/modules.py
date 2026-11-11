@@ -280,10 +280,12 @@ class Uart(_BaseModule):
         )
 
     def send(self, payload: Any) -> Any:
-        return self.module.serial_send_msg(payload)
+        return self.module.serial_send_msg(bytearray(payload) if isinstance(payload, bytes) else payload)
 
     def subscribe(self, callback: Callable[..., Any]) -> Any:
-        return self.module.sub_serial_msg(callback, (), {})
+        raise NotImplementedError(
+            "UART receive is unavailable: the upstream SDK receive path crashes on send ACKs."
+        )
 
     def unsubscribe(self) -> Any:
         return self.module.unsub_serial_msg()

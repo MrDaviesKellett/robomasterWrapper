@@ -123,3 +123,5 @@ Status values:
 | `uart.serial_read_data` | none | intentionally_omitted | Upstream implementation is incomplete. |
 | `ai_module.init_ai_module` | `robot.ai_module.initialize()` | wrapped | |
 | `ai_module.sub_ai_event` / `unsub_ai_event` | `robot.ai_module.subscribe()` / `unsubscribe()` | wrapped | |
+
+UART receive is unavailable upstream: `subscribe()` raises `NotImplementedError` before registering a callback, avoiding the SDK ACK/receive crash. `send()` accepts bytes by converting them to bytearray.
