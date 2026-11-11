@@ -110,6 +110,30 @@ class Camera:
             self.vision.unsub_detect_info(_sdk_detect_mode(self.detect_mode))
             self.detecting = False
 
+    def _stop_sdk_stream(self, kind: str) -> Any:
+        """Allow SDK shutdown sentinels through backed-up media queues (RW-17)."""
+        liveview = getattr(self.camera, "_liveview", None)
+        connection = getattr(liveview, f"_{kind}_stream_conn", None)
+        queues = [getattr(connection, "_sock_queue", None),
+                  getattr(liveview, f"_{kind}_frame_queue", None)]
+        restored = []
+        # Upstream disconnect() uses blocking put(None) after stopping consumers.
+        # Temporarily remove backpressure during shutdown, including any decoder
+        # already waiting on a full frame queue. Restore bounds for stream restart.
+        for pending in queues:
+            if isinstance(pending, queue.Queue):
+                with pending.not_full:
+                    restored.append((pending, pending.maxsize))
+                    pending.maxsize = 0
+                    pending.not_full.notify_all()
+        try:
+            return getattr(self.camera, f"stop_{kind}_stream")()
+        finally:
+            for pending, maxsize in restored:
+                with pending.not_full:
+                    pending.maxsize = maxsize
+                    pending.not_full.notify_all()
+
     def stop(self) -> Any:
         self.stop_detect()
         self.stop_view()
@@ -117,7 +141,7 @@ class Camera:
             self.stop_audio_stream()
         if not self.streaming:
             return True
-        result = self.camera.stop_video_stream()
+        result = self._stop_sdk_stream("video")
         self.streaming = False
         self._consecutive_frame_failures = 0
         return result
@@ -125,7 +149,7 @@ class Camera:
     def _recover_video_stream(self) -> bool:
         if self.streaming:
             try:
-                self.camera.stop_video_stream()
+                self._stop_sdk_stream("video")
             except Exception:
                 pass
             self.streaming = False
@@ -439,7 +463,7 @@ class Camera:
         return result
 
     def stop_audio_stream(self) -> Any:
-        result = self.camera.stop_audio_stream()
+        result = self._stop_sdk_stream("audio")
         self.audio_streaming = False
         return result
 

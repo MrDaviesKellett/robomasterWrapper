@@ -216,3 +216,5 @@ Push commands `continuous_drive`, `rotate`, `rotate_left`, `rotate_right`, and `
 SDK initialization already resets modules. The compatibility `auto_reset` argument no longer triggers a duplicate reset; call `reset()` explicitly when needed.
 
 The stock EP arm has two coupled joints. The teaching API commands the gripper endpoint x (forward) and z (up) in millimetres; individual shoulder/elbow joints, base yaw, and wrist roll are not controllable through this surface. Relative move limits describe displacements and do not guarantee a reachable endpoint from every starting position.
+
+Camera stop and robot close handle full SDK media queues without waiting forever. Shutdown temporarily lifts queue bounds so decoder completion and disconnect sentinels can proceed, then restores them for restart. This uses the SDK LiveView queue internals until upstream shutdown is fixed; normal streaming keeps its existing bounds.
