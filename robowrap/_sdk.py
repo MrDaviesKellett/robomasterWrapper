@@ -61,7 +61,7 @@ LED_COMPONENTS = {
 LED_EFFECTS = {
     "on": getattr(sdk_led, "EFFECT_ON", "on") if sdk_led else "on",
     "off": getattr(sdk_led, "EFFECT_OFF", "off") if sdk_led else "off",
-    "pulse": getattr(sdk_led, "EFFECT_PULSE", "pulse") if sdk_led else "pulse",
+    "pulse": getattr(sdk_led, "EFFECT_BREATH", "breath") if sdk_led else "breath",
     "flash": getattr(sdk_led, "EFFECT_FLASH", "flash") if sdk_led else "flash",
     "breath": getattr(sdk_led, "EFFECT_BREATH", "breath") if sdk_led else "breath",
     "scrolling": getattr(sdk_led, "EFFECT_SCROLLING", "scrolling") if sdk_led else "scrolling",
