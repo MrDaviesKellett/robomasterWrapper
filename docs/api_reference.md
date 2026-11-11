@@ -12,7 +12,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `RoboMaster(conn_type="ap", protocol="udp", serial=None, auto_reset=True, default_mode="chassis")` | `conn_type`: `ap`, `sta`, `rndis` (aliases: `device`, `station`, `usb`); `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. |
+| `RoboMaster(conn_type="ap", protocol="udp", serial=None, auto_reset=False, default_mode="chassis")` | `conn_type`: `ap`, `sta`, `rndis` (aliases: `device`, `station`, `usb`); `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. |
 | `close()` | none | SDK close result | n/a | `robot.close()` | Use this at the end of every script so streams and movement stop cleanly. |
 | `reset()` | none | SDK reset result | SDK-defined | `robot.reset()` | If reset appears slow, wait a moment before the next command. |
 | `get_module(module)` | `module`: names like `cam`, `gun`, `arm`, `battery`, `chassis` | wrapper object or raw advanced module | n/a | `camera = robot.get_module("cam")` | Raises `ValueError` for unknown module names. |
@@ -210,3 +210,5 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 Chassis signs follow DJI examples: x is forward and y is right for both `move` and `continuous_drive`. Continuous z (`continuous_drive`, `rotate`) is clockwise-positive; action angles (`turn`, `move(angle=...)`) are counter-clockwise-positive. `rotate_left` sends negative z, `rotate_right` positive z; `circle` travels counter-clockwise. Hardware capture remains pending. Connection defaults are AP (`ap`) and UDP; unknown connection names raise `ValueError`.
 
 Push commands `continuous_drive`, `rotate`, `rotate_left`, `rotate_right`, and `gun.set_led` return `None`: they are fire and forget and the robot supplies no acknowledgement. `stop()` returns only the wheel command result; it cannot confirm the chassis speed push. `circle` returns its stop timer or `None`, rather than a delivery status.
+
+SDK initialization already resets modules. The compatibility `auto_reset` argument no longer triggers a duplicate reset; call `reset()` explicitly when needed.

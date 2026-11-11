@@ -28,7 +28,7 @@ class RoboMaster:
         protocol: str = "udp",
         serial: Optional[str] = None,
         *,
-        auto_reset: bool = True,
+        auto_reset: bool = False,
         default_mode: str = "chassis",
         connect_retries: int = 2,
         connect_retry_delay: float = 1.0,
@@ -78,8 +78,8 @@ class RoboMaster:
         self.uart = Uart(self)
         self.ai_module = AiModule(self)
 
-        if auto_reset:
-            self.reset()
+        # initialize() already resets the SDK modules. auto_reset is retained
+        # for constructor compatibility; explicit reset() remains available.
         self.set_robot_mode(default_mode)
 
     def __repr__(self) -> str:
