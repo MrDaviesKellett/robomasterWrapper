@@ -6,6 +6,8 @@ from .helperFuncs import ensure_choice, ensure_int_range
 
 
 class Arm:
+    """Two-joint EP teaching surface: gripper endpoint x/z, not individual joints."""
+
     def __init__(self, robomaster: Any) -> None:
         self.robomaster = robomaster
         self.robot = self.robomaster.robot
@@ -20,8 +22,8 @@ class Arm:
         timeout: Optional[float] = None,
     ) -> Any:
         """Move the arm relative to its current position in millimetres."""
-        ensure_int_range("x", x, -200, 200, unit="mm")
-        ensure_int_range("z", z, -200, 200, unit="mm")
+        ensure_int_range("x", x, -220, 220, unit="mm")
+        ensure_int_range("z", z, -150, 150, unit="mm")
         action = self.robot.robotic_arm.move(x=x, y=z)
         return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
@@ -33,9 +35,9 @@ class Arm:
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
-        """Move the arm to an absolute position measured from startup in millimetres."""
-        ensure_int_range("x", x, -200, 200, unit="mm")
-        ensure_int_range("z", z, -200, 200, unit="mm")
+        """Move the arm to an absolute position from the fixed SDK origin in millimetres."""
+        ensure_int_range("x", x, 0, 220, unit="mm")
+        ensure_int_range("z", z, 0, 150, unit="mm")
         action = self.robot.robotic_arm.moveto(x=x, y=z)
         return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
@@ -44,7 +46,7 @@ class Arm:
         return self.robomaster._complete_action(action, blocking=blocking, timeout=timeout)
 
     def reset(self, *, blocking: bool = True, timeout: Optional[float] = None) -> Any:
-        """Return the arm to its startup position."""
+        """Return the arm to the fixed SDK origin (0, 0)."""
         return self.recenter(blocking=blocking, timeout=timeout)
 
     def subscribe_position(self, callback: Callable[..., Any], freq: int = 5) -> Any:
@@ -61,7 +63,7 @@ class Arm:
         self.move_to(x=0, z=50)
         self.gripper.open()
         self.robomaster.sleep(1.5)
-        self.move(x=175, z=-200)
+        self.move_to(x=175, z=0)
         self.gripper.close()
         self.robomaster.sleep(1.5)
         self.gripper.pause()
@@ -71,7 +73,7 @@ class Arm:
         """Run a simple classroom drop sequence."""
         if self.gripper is None:
             raise RuntimeError("The gripper wrapper is not available.")
-        self.move(x=175, z=-200)
+        self.move_to(x=175, z=0)
         self.gripper.open()
         self.robomaster.sleep(1.5)
         self.move_to(x=0, z=50)

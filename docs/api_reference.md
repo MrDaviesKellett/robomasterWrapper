@@ -94,8 +94,8 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `move(x=0, z=0, blocking=True, timeout=None)` | `x,z`: `-200..200 mm` | SDK action or completed action | Yes by default | `robot.arm.move(x=30, z=-20)` | Values are millimetres, not degrees. |
-| `move_to(x=0, z=0, blocking=True, timeout=None)` | `x,z`: `-200..200 mm` | SDK action or completed action | Yes by default | `robot.arm.move_to(x=0, z=50)` | Use startup-relative positions. |
+| `move(x=0, z=0, blocking=True, timeout=None)` | `x`: `-220..220 mm`; `z`: `-150..150 mm` | SDK action or completed action | Yes by default | `robot.arm.move(x=30, z=-20)` | Values are millimetres, not degrees. |
+| `move_to(x=0, z=0, blocking=True, timeout=None)` | `x`: `0..220 mm`; `z`: `0..150 mm` | SDK action or completed action | Yes by default | `robot.arm.move_to(x=0, z=50)` | Use positions relative to the fixed SDK origin. |
 | `recenter(blocking=True, timeout=None)` | none | SDK action or completed action | Yes by default | `robot.arm.recenter()` | Good recovery if the arm position is unknown. |
 | `reset(blocking=True, timeout=None)` | none | SDK action or completed action | Yes by default | `robot.arm.reset()` | Student-safe wrapper for recenter. |
 | `subscribe_position(callback, freq=5)` / `unsubscribe_position()` | `1,5,10,20,50 Hz` | SDK result | non-blocking | `robot.arm.subscribe_position(print)` | Unsubscribe when changing callbacks. |
@@ -212,3 +212,5 @@ Chassis signs follow DJI examples: x is forward and y is right for both `move` a
 Push commands `continuous_drive`, `rotate`, `rotate_left`, `rotate_right`, and `gun.set_led` return `None`: they are fire and forget and the robot supplies no acknowledgement. `stop()` returns only the wheel command result; it cannot confirm the chassis speed push. `circle` returns its stop timer or `None`, rather than a delivery status.
 
 SDK initialization already resets modules. The compatibility `auto_reset` argument no longer triggers a duplicate reset; call `reset()` explicitly when needed.
+
+The stock EP arm has two coupled joints. The teaching API commands the gripper endpoint x (forward) and z (up) in millimetres; individual shoulder/elbow joints, base yaw, and wrist roll are not controllable through this surface. Relative move limits describe displacements and do not guarantee a reachable endpoint from every starting position.

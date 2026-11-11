@@ -125,3 +125,5 @@ Status values:
 | `ai_module.sub_ai_event` / `unsub_ai_event` | `robot.ai_module.subscribe()` / `unsubscribe()` | wrapped | |
 
 UART receive is unavailable upstream: `subscribe()` raises `NotImplementedError` before registering a callback, avoiding the SDK ACK/receive crash. `send()` accepts bytes by converting them to bytearray.
+
+The arm teaching surface commands only gripper endpoint x/z in mm, through two coupled joints. It does not expose individual joint control, base yaw, or wrist roll. Absolute ranges: x 0–220, z 0–150; relative displacements: x ±220, z ±150.
