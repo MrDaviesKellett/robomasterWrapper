@@ -18,6 +18,7 @@ from .helperFuncs import (
 from .modules import AiModule, Armor, Battery, Chassis, DistanceSensor, SensorAdaptor, Servo, Uart
 
 RAD_TO_DEG = 180.0 / pi
+_UNSET = object()
 
 
 class RoboMaster:
@@ -375,15 +376,23 @@ class RoboMaster:
 
     def move(
         self,
-        x: float = 0.0,
-        y: float = 0.0,
-        angle: float = 0.0,
+        x: float = _UNSET,
+        y: float = _UNSET,
+        angle: float = _UNSET,
         *,
         speed: Optional[float] = None,
         turn_speed: Optional[float] = None,
         blocking: bool = True,
         timeout: Optional[float] = None,
     ) -> Any:
+        if x is _UNSET and y is _UNSET and angle is _UNSET:
+            raise ValueError(
+                "move() requires x, y, or angle. Accepted arguments: x, y, angle, "
+                "speed, turn_speed, blocking, timeout. Use move(x=0, y=0) for an intentional stop."
+            )
+        x = 0.0 if x is _UNSET else x
+        y = 0.0 if y is _UNSET else y
+        angle = 0.0 if angle is _UNSET else angle
         speed = self._move_speed(speed)
         turn_speed = self._turn_speed(turn_speed)
         ensure_range("x", x, -5.0, 5.0, unit="m")
