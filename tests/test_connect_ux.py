@@ -25,7 +25,9 @@ class ConnectUxTests(unittest.TestCase):
     def test_actual_route_and_serial_description(self):
         with patch('robowrap._sdk.sdk_robot') as sdk:
             sdk.config.ROBOT_IP_STR = '203.0.113.1'
-            self.assertEqual(connection_target('ap'), '203.0.113.1')
+            self.assertEqual(connection_target('sta'), '203.0.113.1')
+            sdk.config.ROBOT_DEFAULT_WIFI_ADDR = ('127.0.0.2', 20020)
+            self.assertEqual(connection_target('ap'), '127.0.0.2')
         with patch('robowrap._sdk.sdk_robot', None):
             self.assertEqual(connection_target('rndis'), '192.168.42.2')
             self.assertEqual(connection_target('sta', 'ABC'), 'network discovery (serial ABC)')
@@ -66,6 +68,22 @@ class ConnectUxTests(unittest.TestCase):
             RoboMaster(_sdk_robot=fake)
         self.assertIn('Still connecting to robot via ap on', output.getvalue())
         self.assertIn('(10 seconds elapsed)', output.getvalue())
+
+    def test_timeout_includes_retry_delay(self):
+        fake = FakeRobot()
+        calls = []
+        closed = Event()
+        fake.close = lambda: closed.set()
+        def initialize(**kwargs):
+            calls.append(kwargs)
+            return False
+        fake.initialize = initialize
+        started = time.monotonic()
+        with self.assertRaisesRegex(RuntimeError, 'connect_timeout of 0.05 seconds expired'):
+            RoboMaster(_sdk_robot=fake, connect_timeout=0.05, connect_retry_delay=5)
+        self.assertLess(time.monotonic() - started, 0.5)
+        self.assertTrue(closed.wait(1))
+        self.assertEqual(len(calls), 1)
 
     def test_invalid_timeout(self):
         for value in (0, -1, float('inf'), float('nan')):

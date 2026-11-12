@@ -129,13 +129,13 @@ class RoboMaster:
                     if done.is_set():
                         break
                     cancelled.set()
-                error = TimeoutError(f"connect_timeout of {timeout:g} seconds expired.")
-                result = False
                 break
             print(f"Still connecting to robot via {connection} on {target} ... "
                   f"({now - started:.0f} seconds elapsed)", flush=True)
             heartbeat += 10.0
         if cancelled.is_set() or result is False:
+            if cancelled.is_set():
+                error = TimeoutError(f"connect_timeout of {timeout:g} seconds expired.")
             message = "Robot could not be connected. Check power, network mode, and serial number."
             if error is not None:
                 message = f"{message} Last error: {error}"
