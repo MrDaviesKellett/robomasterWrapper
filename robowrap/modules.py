@@ -284,7 +284,8 @@ class Uart(_BaseModule):
 
     def subscribe(self, callback: Callable[..., Any]) -> Any:
         raise NotImplementedError(
-            "UART receive is unavailable: the upstream SDK receive path crashes on send ACKs."
+            "UART receive is unavailable: the upstream SDK receive path crashes on send ACKs. "
+            "Use send() for output; receive stays unavailable until the upstream SDK is fixed."
         )
 
     def unsubscribe(self) -> Any:
