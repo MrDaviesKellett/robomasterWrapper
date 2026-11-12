@@ -11,12 +11,11 @@ SNAKE_CASE_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 def clamp(val: Number, min_val: Number, max_val: Number) -> Number:
     """Clamp a numeric value to an inclusive range."""
+    for name, value in (("val", val), ("min_val", min_val), ("max_val", max_val)):
+        if not isinstance(value, (int, float)):
+            raise TypeError(f"{name} must be of type int or float.")
     if min_val > max_val:
         raise ValueError("min_val must be less than or equal to max_val.")
-    if not isinstance(val, (int, float)):
-        raise TypeError("val must be an int or float.")
-    if not isinstance(min_val, (int, float)) or not isinstance(max_val, (int, float)):
-        raise TypeError("min_val and max_val must be ints or floats.")
     return min(max(val, min_val), max_val)
 
 
@@ -30,7 +29,7 @@ def ensure_range(
 ) -> Number:
     """Validate that a numeric value falls inside an inclusive range."""
     if not isinstance(value, (int, float)):
-        raise TypeError(f"{name} must be a number.")
+        raise TypeError(f"{name} must be of type int or float.")
     if value < minimum or value > maximum:
         suffix = f" {unit}".rstrip()
         raise ValueError(f"{name} must be between {minimum} and {maximum}{suffix}.")
@@ -47,7 +46,7 @@ def ensure_int_range(
 ) -> int:
     """Validate that an integer falls inside an inclusive range."""
     if not isinstance(value, int):
-        raise TypeError(f"{name} must be an int.")
+        raise TypeError(f"{name} must be of type int.")
     ensure_range(name, value, minimum, maximum, unit=unit)
     return value
 
@@ -64,7 +63,7 @@ def ensure_choice(name: str, value: T, choices: Iterable[T]) -> T:
 def ensure_color(name: str, value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Validate an RGB tuple."""
     if not isinstance(value, tuple) or len(value) != 3:
-        raise TypeError(f"{name} must be an (r, g, b) tuple.")
+        raise TypeError(f"{name} must be of type tuple with three int values (r, g, b).")
     red, green, blue = value
     ensure_int_range(f"{name}[0]", red, 0, 255)
     ensure_int_range(f"{name}[1]", green, 0, 255)
