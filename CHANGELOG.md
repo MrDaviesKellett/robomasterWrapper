@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.1 - 2026-11-12
 
 - Print the connection route immediately and progress heartbeats every ten seconds; add an optional overall `connect_timeout` (seconds) while preserving the existing connection troubleshooting message. Late SDK connections are closed after timeout.
 - Reject `move()` when all movement coordinates are omitted, with accepted arguments and an explicit-zero example; keep `move(x=0, y=0)` supported.
