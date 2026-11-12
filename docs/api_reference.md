@@ -221,3 +221,8 @@ The stock EP arm has two coupled joints. The teaching API commands the gripper e
 Camera stop and robot close handle full SDK media queues without waiting forever. Shutdown temporarily lifts queue bounds so decoder completion and disconnect sentinels can proceed, then restores them for restart. This uses the SDK LiveView queue internals until upstream shutdown is fixed; normal streaming keeps its existing bounds.
 
 Blocking action results are `True` only when waiting completed and the SDK action did not fail; timeout or failed state returns `False`. Non-blocking calls return the SDK action unchanged. `pulse` is an alias for the supported `breath` LED effect.
+
+Connection progress is printed immediately and every ten seconds while connecting.
+Use `RoboMaster(connect_timeout=5)` to limit the total connection wait (including retries)
+to five seconds. The default `None` preserves SDK retry timing. After a timeout,
+the SDK call may finish in the background; its connection is then closed automatically.

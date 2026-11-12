@@ -66,3 +66,16 @@ LED_EFFECTS = {
     "breath": getattr(sdk_led, "EFFECT_BREATH", "breath") if sdk_led else "breath",
     "scrolling": getattr(sdk_led, "EFFECT_SCROLLING", "scrolling") if sdk_led else "scrolling",
 }
+
+
+def connection_target(connection: str, serial: Any = None) -> str:
+    """Describe the SDK's configured route without triggering discovery."""
+    config = getattr(sdk_robot, "config", None)
+    override = getattr(config, "ROBOT_IP_STR", None)
+    if override:
+        return override
+    if connection == "sta":
+        return f"network discovery (serial {serial})" if serial else "network discovery"
+    name = "ROBOT_DEFAULT_RNDIS_ADDR" if connection == "rndis" else "ROBOT_DEFAULT_WIFI_ADDR"
+    fallback = "192.168.42.2" if connection == "rndis" else "192.168.2.1"
+    return getattr(config, name, (fallback,))[0]

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from math import pi
-from threading import Timer
-from time import sleep
+from math import isfinite, pi
+from threading import Event, Lock, Thread, Timer
+from time import monotonic, sleep
 from typing import Any, Optional
 
 from ._sdk import LED_COMPONENTS, LED_EFFECTS, create_sdk_robot, normalize_robot_mode, resolve_robot_mode
@@ -31,6 +31,7 @@ class RoboMaster:
         default_mode: str = "chassis",
         connect_retries: int = 2,
         connect_retry_delay: float = 1.0,
+        connect_timeout: Optional[float] = None,
         _sdk_robot: Optional[Any] = None,
         _sleep=sleep,
     ) -> None:
@@ -45,23 +46,13 @@ class RoboMaster:
         ensure_int_range("connect_retries", connect_retries, 0, 20)
         ensure_range("connect_retry_delay", connect_retry_delay, 0.0, 30.0, unit="seconds")
 
-        initialize_result: Any = False
-        initialize_error: Optional[Exception] = None
-        for attempt in range(connect_retries + 1):
-            try:
-                initialize_result = self.robot.initialize(conn_type=connection, proto_type=protocol.lower(), sn=serial)
-            except Exception as exc:
-                initialize_result = False
-                initialize_error = exc
-            if initialize_result is not False:
-                break
-            if attempt < connect_retries:
-                self.sleep(connect_retry_delay)
-        if initialize_result is False:
-            message = "Robot could not be connected. Check power, network mode, and serial number."
-            if initialize_error is not None:
-                message = f"{message} Last error: {initialize_error}"
-            raise RuntimeError(message)
+        if connect_timeout is not None:
+            ensure_range("connect_timeout", connect_timeout, 0.001, float("inf"), unit="seconds")
+            if not isfinite(connect_timeout):
+                raise ValueError("connect_timeout must be finite.")
+
+        self._connect(connection, protocol.lower(), serial, connect_retries,
+                      connect_retry_delay, connect_timeout)
 
         self.chassis = Chassis(self)
         self.gun = Gun(self)
@@ -80,6 +71,74 @@ class RoboMaster:
         # initialize() already resets the SDK modules. auto_reset is retained
         # for constructor compatibility; explicit reset() remains available.
         self.set_robot_mode(default_mode)
+
+    def _connect(self, connection, protocol, serial, retries, retry_delay, timeout):
+        # SDK initialize() has no timeout hook. Keep its blocking discovery off
+        # the caller thread, and close late connections after a timeout.
+        from ._sdk import connection_target
+
+        target = connection_target(connection, serial)
+        print(f"Connecting to robot via {connection} on {target} ...", flush=True)
+        done = Event()
+        cancelled = Event()
+        lock = Lock()
+        result = False
+        error = None
+
+        def initialize():
+            nonlocal result, error
+            try:
+                for attempt in range(retries + 1):
+                    if cancelled.is_set():
+                        break
+                    try:
+                        result = self.robot.initialize(conn_type=connection, proto_type=protocol, sn=serial)
+                    except Exception as exc:
+                        result = False
+                        error = exc
+                    if result is not False or cancelled.is_set():
+                        break
+                    if attempt < retries:
+                        if self.sleep is sleep:
+                            cancelled.wait(retry_delay)
+                        else:
+                            self.sleep(retry_delay)
+            finally:
+                with lock:
+                    done.set()
+                    abandoned = cancelled.is_set()
+                if abandoned:
+                    try:
+                        self.robot.close()
+                    except Exception:
+                        pass
+
+        started = monotonic()
+        deadline = None if timeout is None else started + timeout
+        heartbeat = started + 10.0
+        Thread(target=initialize, name="robowrap-connect", daemon=True).start()
+        while True:
+            now = monotonic()
+            wake = heartbeat if deadline is None else min(heartbeat, deadline)
+            if done.wait(max(0.0, wake - now)):
+                break
+            now = monotonic()
+            if deadline is not None and now >= deadline:
+                with lock:
+                    if done.is_set():
+                        break
+                    cancelled.set()
+                error = TimeoutError(f"connect_timeout of {timeout:g} seconds expired.")
+                result = False
+                break
+            print(f"Still connecting to robot via {connection} on {target} ... "
+                  f"({now - started:.0f} seconds elapsed)", flush=True)
+            heartbeat += 10.0
+        if cancelled.is_set() or result is False:
+            message = "Robot could not be connected. Check power, network mode, and serial number."
+            if error is not None:
+                message = f"{message} Last error: {error}"
+            raise RuntimeError(message)
 
     def __repr__(self) -> str:
         return f"RoboMaster {self.get_sn()}"
