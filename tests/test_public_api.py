@@ -28,11 +28,10 @@ except ImportError:  # pragma: no cover - fallback for plain unittest discovery
 
 
 SNAKE_CASE = re.compile(r"^[a-z_][a-z0-9_]*$")
-ALLOWED_LEGACY_NAMES = {"setSpeed"}
 
 
 class PublicApiTests(unittest.TestCase):
-    def test_public_callables_are_snake_case_or_allowlisted_aliases(self) -> None:
+    def test_public_callables_are_snake_case(self) -> None:
         classes = [
             RoboMaster,
             Gun,
@@ -54,8 +53,6 @@ class PublicApiTests(unittest.TestCase):
                 if name.startswith("_") or not inspect.isfunction(member):
                     continue
                 if SNAKE_CASE.match(name):
-                    continue
-                if name in ALLOWED_LEGACY_NAMES:
                     continue
                 offenders.append(f"{cls.__name__}.{name}")
         self.assertEqual(offenders, [])
@@ -168,8 +165,6 @@ class PublicApiTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "set_default_speed.*continuous_drive"):
             robot.set_speed(x=0.5)
-        with self.assertRaisesRegex(ValueError, "set_default_speed.*continuous_drive"):
-            robot.setSpeed(x=0.5)
 
     def test_continuous_drive_wraps_sdk_drive_speed(self) -> None:
         fake = FakeRobot()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
+import logging
+from typing import Any, Optional
 
 try:
     from robomaster import led as sdk_led
@@ -79,3 +80,51 @@ def connection_target(connection: str, serial: Any = None) -> str:
     name = "ROBOT_DEFAULT_RNDIS_ADDR" if connection == "rndis" else "ROBOT_DEFAULT_WIFI_ADDR"
     fallback = "192.168.42.2" if connection == "rndis" else "192.168.2.1"
     return getattr(config, name, (fallback,))[0]
+
+
+def sdk_loggers() -> list[logging.Logger]:
+    """Loggers the SDK writes to: ``sdk`` today, ``robomaster.*`` if renamed."""
+    names = ["sdk"] + sorted(
+        name for name in logging.root.manager.loggerDict
+        if name == "robomaster" or name.startswith("robomaster.")
+    )
+    return [logging.getLogger(name) for name in names]
+
+
+class QuietSdkLogs(logging.Handler):
+    """Hide SDK log output while connecting, keeping records for our own error."""
+
+    def __init__(self) -> None:
+        super().__init__(logging.WARNING)
+        self.records: list[logging.LogRecord] = []
+        self._saved: list[tuple[logging.Logger, bool, list[tuple[logging.Handler, int]]]] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+    def start(self) -> None:
+        for logger in sdk_loggers():
+            self._saved.append((logger, logger.propagate, [(h, h.level) for h in logger.handlers]))
+            for handler in logger.handlers:
+                handler.setLevel(logging.CRITICAL)
+            logger.propagate = False
+            logger.addHandler(self)
+
+    def stop(self) -> None:
+        while self._saved:
+            logger, propagate, handlers = self._saved.pop()
+            logger.removeHandler(self)
+            logger.propagate = propagate
+            for handler, level in handlers:
+                handler.setLevel(level)
+
+    def detail(self) -> Optional[str]:
+        """Most useful hidden SDK message plus a count of the rest, or None."""
+        records = list(self.records)
+        if not records:
+            return None
+        best = next((r for r in records if "connection failed" in r.getMessage().lower()), records[0])
+        detail = f"SDK detail: {best.getMessage()}"
+        if len(records) > 1:
+            detail = f"{detail} ({len(records) - 1} more SDK log messages hidden)"
+        return detail

@@ -5,7 +5,7 @@ from threading import Event, Lock, Thread, Timer
 from time import monotonic, sleep
 from typing import Any, Optional
 
-from ._sdk import LED_COMPONENTS, LED_EFFECTS, create_sdk_robot, normalize_robot_mode, resolve_robot_mode
+from ._sdk import LED_COMPONENTS, LED_EFFECTS, QuietSdkLogs, create_sdk_robot, normalize_robot_mode, resolve_robot_mode
 from .arm import Arm, Gripper
 from .camera import Camera
 from .gun import Gun
@@ -85,6 +85,10 @@ class RoboMaster:
         lock = Lock()
         result = False
         error = None
+        # The SDK prints ~8 raw ERROR lines per failed attempt. Hide them while
+        # connecting and fold the most useful one into our RuntimeError.
+        quiet = QuietSdkLogs()
+        quiet.start()
 
         def initialize():
             nonlocal result, error
@@ -106,13 +110,17 @@ class RoboMaster:
                             self.sleep(retry_delay)
             finally:
                 with lock:
-                    done.set()
                     abandoned = cancelled.is_set()
+                    if not abandoned:
+                        quiet.stop()
+                    done.set()
                 if abandoned:
                     try:
                         self.robot.close()
                     except Exception:
                         pass
+                    finally:
+                        quiet.stop()
 
         started = monotonic()
         deadline = None if timeout is None else started + timeout
@@ -139,6 +147,9 @@ class RoboMaster:
             message = "Robot could not be connected. Check power, network mode, and serial number."
             if error is not None:
                 message = f"{message} Last error: {error}"
+            detail = quiet.detail()
+            if detail is not None:
+                message = f"{message} {detail}"
             raise RuntimeError(message)
 
     def __repr__(self) -> str:
@@ -159,10 +170,31 @@ class RoboMaster:
     def _complete_action(self, action: Any, *, blocking: bool = True, timeout: Optional[float] = None) -> Any:
         return wait_for_action(action, blocking=blocking, timeout=timeout)
 
+    def __enter__(self) -> "RoboMaster":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        # The SDK keeps non-daemon threads alive until close(), so a script
+        # that skips it hangs at exit. Keep the body's error if close fails too.
+        try:
+            self.close()
+        except Exception:
+            if exc_type is None:
+                raise
+        return False
+
     def close(self) -> Any:
-        self.stop()
-        self.cam.stop()
-        return self.robot.close()
+        # Always reach robot.close(), even if stopping motion or the camera fails.
+        errors = []
+        for step in (self.stop, self.cam.stop):
+            try:
+                step()
+            except Exception as exc:
+                errors.append(exc)
+        result = self.robot.close()
+        if errors:
+            raise errors[0]
+        return result
 
     def get_module(self, module: str) -> Any:
         normalized = module.lower()
@@ -433,6 +465,3 @@ class RoboMaster:
         duration = (2 * pi * radius / speed) * num_circles
         self.continuous_drive(x=speed, z=angular_velocity)
         return self.stop_after(duration, blocking=blocking)
-
-    def setSpeed(self, *args: Any, **kwargs: Any) -> Any:
-        return self.set_speed(*args, **kwargs)
