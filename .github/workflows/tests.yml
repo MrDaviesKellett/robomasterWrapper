@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Wrapper unit tests (Python 3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+
+      # --no-project keeps CI dependency-light: the suite uses fakes and does
+      # not need the RoboMaster SDK or PySide6 installed.
+      - name: Run unit suite
+        run: uv run --no-project python -m unittest discover -s tests
