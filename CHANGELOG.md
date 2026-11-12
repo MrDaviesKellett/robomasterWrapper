@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.2 - 2026-11-12
 
 - BREAKING: remove the last camelCase alias, `RoboMaster.setSpeed`. It now raises `AttributeError`; Python suggests `set_speed`, whose error points to `set_default_speed(...)` or `continuous_drive(...)`.
 - Support `with RoboMaster() as robot:`. Leaving the block calls `close()`; if the block raised, its error is kept and a secondary close error is suppressed. `close()` now always reaches the SDK close even if stopping motion or the camera fails.
