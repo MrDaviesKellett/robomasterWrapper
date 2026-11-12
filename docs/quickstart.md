@@ -25,31 +25,28 @@ from time import sleep
 
 from robowrap import RoboMaster
 
-robot = RoboMaster()
+with RoboMaster() as robot:
+    robot.set_leds(0, 200, 255)
+    robot.forward(0.5)
+    robot.turn_left(90)
 
-robot.set_leds(0, 200, 255)
-robot.forward(0.5)
-robot.turn_left(90)
+    robot.cam.start()
+    robot.cam.detect_person()
+    sleep(2)
 
-robot.cam.start()
-robot.cam.detect_person()
-sleep(2)
-
-robot.arm.move_to(x=0, z=50)
-robot.gripper.open()
-sleep(1)
-robot.gripper.close()
-
-robot.close()
+    robot.arm.move_to(x=0, z=50)
+    robot.gripper.open()
+    sleep(1)
+    robot.gripper.close()
 ```
 
 ## What each line is doing
 
-- `RoboMaster()` connects to the EP, builds the subsystem wrappers, and switches to chassis-led mode by default.
+- `with RoboMaster() as robot:` connects to the EP, builds the subsystem wrappers, and switches to chassis-led mode by default.
 - `set_leds`, `forward`, and `turn_left` are top-level chassis or robot actions.
 - `robot.cam` controls the camera and on-device vision.
 - `robot.arm` and `robot.gripper` control the manipulator.
-- `close()` stops motion, shuts down streams, and closes the SDK connection cleanly.
+- Leaving the `with` block calls `robot.close()`, which stops motion, shuts down streams, and closes the SDK connection cleanly, even if your code raised an error. Without `close()` the SDK's background threads keep the finished script from exiting.
 
 ## Safe defaults
 

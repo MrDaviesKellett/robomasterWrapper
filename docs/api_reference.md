@@ -12,8 +12,9 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `RoboMaster(conn_type="ap", protocol="udp", serial=None, auto_reset=False, default_mode="chassis", connect_timeout=None)` | `conn_type`: `ap`, `sta`, `rndis` (aliases: `device`, `station`, `usb`); `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes or `connect_timeout` seconds elapse | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. |
-| `close()` | none | SDK close result | n/a | `robot.close()` | Use this at the end of every script so streams and movement stop cleanly. |
+| `RoboMaster(conn_type="ap", protocol="udp", serial=None, auto_reset=False, default_mode="chassis", connect_timeout=None)` | `conn_type`: `ap`, `sta`, `rndis` (aliases: `device`, `station`, `usb`); `protocol`: `tcp` or `udp` | `RoboMaster` | Constructor blocks until SDK init finishes or `connect_timeout` seconds elapse | `robot = RoboMaster()` | Raises `RuntimeError` on connection failure. Check power, link mode, then retry. Raw SDK log lines are hidden while connecting; the most useful one is included in the error as `SDK detail: ...`. |
+| `close()` | none | SDK close result | n/a | `robot.close()` | Use this at the end of every script so streams and movement stop cleanly; without it the SDK's background threads keep the script from exiting. Always reaches the SDK close, then re-raises the first stop/camera error if any. |
+| `with RoboMaster() as robot:` | same arguments as `RoboMaster(...)` | the connected `RoboMaster` | n/a | `with RoboMaster() as robot:` `robot.forward(0.5)` | Calls `close()` when the block ends, including after an error. If the block raised, that error is kept and a secondary `close()` error is suppressed. Preferred for student scripts. |
 | `reset()` | none | SDK reset result | SDK-defined | `robot.reset()` | If reset appears slow, wait a moment before the next command. |
 | `get_module(module)` | `module`: names like `cam`, `gun`, `arm`, `battery`, `chassis` | wrapper object or raw advanced module | n/a | `camera = robot.get_module("cam")` | Raises `ValueError` for unknown module names. |
 | `set_robot_mode(mode="free")` | `mode`: `free`, `chassis`, `gun` | SDK result | n/a | `robot.set_robot_mode("gun")` | Raises `ValueError` for invalid modes. |
@@ -37,7 +38,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 | `stop_after(duration=1.0, blocking=False)` | `duration`: `0..600 s` | `Timer` or `None` | Optional | `robot.stop_after(2)` | Raises `ValueError` for invalid durations. |
 | `set_default_speed(speed=None, turn_speed=None)` | `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | `None` | n/a | `robot.set_default_speed(speed=0.75)` | Changes defaults for future distance moves. Named `speed` and `turn_speed` arguments still override it. |
 | `get_default_speed()` | none | `(speed, turn_speed)` | n/a | `speed, turn = robot.get_default_speed()` | Use when checking current classroom defaults. |
-| `set_speed(...)` | blocked ambiguous name | raises `ValueError` | n/a | n/a | Error message asks whether you meant `set_default_speed(...)` or `continuous_drive(...)`. |
+| `set_speed(...)` | blocked ambiguous name | raises `ValueError` | n/a | n/a | Error message asks whether you meant `set_default_speed(...)` or `continuous_drive(...)`. The old `setSpeed` spelling was removed in 0.9.2 and raises `AttributeError`. |
 | `continuous_drive(x=0.0, y=0.0, z=0.0, timeout=None)` | `x,y`: `-3.5..3.5 m/s`; `z`: `-600..600 deg/s` | `None` (fire and forget) | continuous command, non-blocking | `robot.continuous_drive(x=0.5)` | Stop with `stop()` if you need to cancel continuous motion. |
 | `rotate(angular_velocity=0.0, timeout=None)` | `-600..600 deg/s` | `None` (fire and forget) | non-blocking | `robot.rotate(45)` | Use `stop()` or `stop_after()` to end rotation. |
 | `rotate_left(angular_velocity=0.0, timeout=None)` | same as `rotate` | `None` (fire and forget) | non-blocking | `robot.rotate_left(90)` | Same recovery as `rotate`. |
@@ -116,6 +117,12 @@ The default chassis-led mode ignores gimbal yaw commands. Call `robot.set_robot_
 | `subscribe_status(callback, freq=5)` / `unsubscribe_status()` | `1,5,10,20,50 Hz` | SDK result | non-blocking | `robot.gripper.subscribe_status(print)` | Unsubscribe when done. |
 
 ## `robot.cam`
+
+### Headless use (SSH, CI, no display)
+
+`view()` opens a PySide6 window, so it needs PySide6 installed and a desktop session (a logged-in macOS, Windows, or Linux desktop with a display). It will not work over plain SSH, in CI, or on a headless Raspberry Pi.
+
+Everything else in `robot.cam` works headless: `start()`, `frame()` (the SDK `read_cv2_image` frame, as a NumPy array), `take_photo()`, the audio helpers, and the detection APIs (`detect_person`, `detect_gesture`, `detect_line`, `detect_marker`, `detect_robot`, `follow_line`, `move_to_marker`). Read frames with `robot.cam.frame()` and save or process them instead of calling `view()`.
 
 ### Stream and camera utilities
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- BREAKING: remove the last camelCase alias, `RoboMaster.setSpeed`. It now raises `AttributeError`; Python suggests `set_speed`, whose error points to `set_default_speed(...)` or `continuous_drive(...)`.
+- Support `with RoboMaster() as robot:`. Leaving the block calls `close()`; if the block raised, its error is kept and a secondary close error is suppressed. `close()` now always reaches the SDK close even if stopping motion or the camera fails.
+- Hide the SDK's raw log output while connecting and add the most useful hidden message to the connection `RuntimeError` as `SDK detail: ...`. SDK logging is restored afterwards.
+- Docs: macOS Python 3.14 install lines, headless camera notes, `with` in the quickstart.
+- CI: run the unit suite on push and pull request with Python 3.14.
+
 ## 0.9.1 - 2026-11-12
 
 - Print the connection route immediately and progress heartbeats every ten seconds; add an optional overall `connect_timeout` (seconds) while preserving the existing connection troubleshooting message. Late SDK connections are closed after timeout.

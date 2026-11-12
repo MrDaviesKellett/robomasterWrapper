@@ -8,6 +8,12 @@
 - Confirm the connection mode matches your code: primary modes are `ap` (Wi-Fi direct), `sta` (Wi-Fi networking), and `rndis` (USB). Aliases `device`, `station`, `usb` are accepted; typos raise `ValueError`. UDP is the default protocol.
 - If you are using a specific serial number, confirm it matches the robot.
 - Recovery: restart the robot, reconnect Wi-Fi or USB, and run the script again.
+- The SDK's own log lines are hidden while connecting. The most useful one is added to the end of the error as `SDK detail: ...`, including the address robowrap tried.
+
+### The script finishes but never exits
+
+- The SDK keeps background threads running until `robot.close()` is called.
+- Recovery: use `with RoboMaster() as robot:` so `close()` runs automatically, even after an error, or call `robot.close()` at the end of the script. Press Ctrl+C to stop a script that is already stuck.
 
 ### The script hangs during startup
 
@@ -68,7 +74,7 @@
 
 - `continuous_drive` is continuous speed control.
 - `set_default_speed` changes defaults for future move commands.
-- `set_speed` is blocked because the name is ambiguous; its error message points to the two clearer choices.
+- `set_speed` is blocked because the name is ambiguous; its error message points to the two clearer choices. The old `setSpeed` spelling was removed in 0.9.2 and raises `AttributeError`.
 - Recovery: call `stop()` or use `stop_after(duration)` if you want timed motion.
 
 ## Invalid parameter errors

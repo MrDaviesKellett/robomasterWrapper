@@ -6,6 +6,7 @@
 - Legacy camelCase and mixed-case aliases (36 in total) were removed in 0.9.0.
 - Calls using removed names raise `AttributeError`.
 - These breaking changes ship in 0.9.0 (2026-11-12), per the maintainer’s decision.
+- `setSpeed` was left behind in 0.9.0 and 0.9.1 as a silent delegator to the blocked `set_speed`. It is removed in 0.9.2 and now raises `AttributeError` like the other 36 names. Python’s own hint reads `Did you mean '.set_speed' instead of '.setSpeed'?`, and `set_speed` then raises a `ValueError` that names the two real choices.
 
 ## Top-level `RoboMaster`
 
@@ -21,7 +22,7 @@
 | `setLEDs` | `set_leds` |
 | `continuousDrive` | `continuous_drive` |
 | `stopAfter` | `stop_after` |
-| `setSpeed` | `set_default_speed` for future move defaults, or `continuous_drive` for immediate continuous driving |
+| `setSpeed` (removed in 0.9.2) | `set_default_speed` for future move defaults, or `continuous_drive` for immediate continuous driving |
 | `rotateLeft` | `rotate_left` |
 | `rotateRight` | `rotate_right` |
 | `turnLeft` | `turn_left` |

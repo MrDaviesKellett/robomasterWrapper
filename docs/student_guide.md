@@ -9,11 +9,11 @@ Start by connecting to the robot and closing it cleanly at the end.
 ```python
 from robowrap import RoboMaster
 
-robot = RoboMaster()
-robot.close()
+with RoboMaster() as robot:
+    robot.set_leds(0, 255, 0)
 ```
 
-Use `close()` at the end of every program.
+The `with` block closes the robot for you when it ends, even if your code has an error. If you write `robot = RoboMaster()` instead, call `robot.close()` at the end of every program, or the script will not exit.
 
 ## 2. Make the robot move
 
