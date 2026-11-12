@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased — version decision pending Martin (recommend 0.9.0)
+## 0.9.0 - 2026-11-12
+
+### BREAKING CHANGES
+
+- The 36 expired camelCase and mixed-case aliases have been removed. Use snake_case names now; see `docs/migration_snake_case.md`.
+- Push commands for continuous chassis speed/rotation and the blaster LED now return `None` (fire and forget), not a delivery status.
+- The `pulse` LED effect now maps to the supported SDK `breath` effect.
+- Blaster fire count is restricted to 1–5.
+- `continuous_drive` and rotation axis signs follow DJI convention: x forward, y right, continuous z clockwise-positive; `rotate_left` sends negative z and `rotate_right` positive z. Action angles remain counter-clockwise-positive.
+- Connection defaults are normalized to `conn_type="ap"`, `protocol="udp"`; SDK connection names are primary, legacy connection aliases remain supported, and unknown names raise `ValueError`.
+- UART `subscribe()` raises `NotImplementedError` until upstream receive handling is fixed.
+
+### Fixes by audit finding
 
 - RW-01: round recenter speeds to integers before SDK packing.
 - RW-02: blocking actions check failed state as well as wait completion.
@@ -20,7 +32,7 @@
 - RW-16: correct the historical positive-Y statement.
 - RW-17: remove media queue backpressure during shutdown and restore bounds, preventing stop/close deadlocks.
 
-The version remains 0.8.8 in package metadata until Martin decides between 0.8.9 and 0.9.0. No production publication has been performed.
+Breaking changes are included in 0.9.0 per the maintainer’s decision.
 
 ## 0.8.8
 
@@ -85,4 +97,4 @@ The version remains 0.8.8 in package metadata until Martin decides between 0.8.9
 ### Deprecations
 
 - CamelCase and legacy aliases introduced before `0.8.0` are deprecated as of `2026-04-13`.
-- The original removal target was `0.9.0`, not before `2026-09-01`; removal is implemented in the pending release.
+- The original removal target was `0.9.0`, not before `2026-09-01`; removal is implemented in 0.9.0.

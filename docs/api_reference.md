@@ -1,6 +1,6 @@
 # API Reference
 
-This file documents the primary snake_case API. Removed aliases are listed in [migration_snake_case.md](migration_snake_case.md).
+This file documents the 0.9.0 snake_case API. Removed aliases are listed in [migration_snake_case.md](migration_snake_case.md).
 
 ## Student-first design
 
@@ -33,7 +33,7 @@ robowrap exists to preserve a low-friction classroom path: one robot object, int
 
 | Method | Defaults / units / ranges | Returns | Blocking | Minimal example | Failure and recovery |
 | --- | --- | --- | --- | --- | --- |
-| `stop()` | none | SDK result | immediate | `robot.stop()` | Use this after any continuous speed command. |
+| `stop()` | none | wheel command result only | immediate | `robot.stop()` | Use this after any continuous speed command. |
 | `stop_after(duration=1.0, blocking=False)` | `duration`: `0..600 s` | `Timer` or `None` | Optional | `robot.stop_after(2)` | Raises `ValueError` for invalid durations. |
 | `set_default_speed(speed=None, turn_speed=None)` | `speed`: `0.5..2.0 m/s`; `turn_speed`: `10..540 deg/s` | `None` | n/a | `robot.set_default_speed(speed=0.75)` | Changes defaults for future distance moves. Named `speed` and `turn_speed` arguments still override it. |
 | `get_default_speed()` | none | `(speed, turn_speed)` | n/a | `speed, turn = robot.get_default_speed()` | Use when checking current classroom defaults. |
@@ -200,7 +200,8 @@ The default chassis-led mode ignores gimbal yaw commands. Call `robot.set_robot_
 | --- | --- | --- | --- | --- | --- |
 | `configure(...)` | baud preset `0..4`; data bits `0..3`; buffers `1..4096` | SDK result | n/a | `robot.uart.configure(baud_rate=0)` | Use the default serial settings unless your extension board needs something else. |
 | `send(payload)` | string, bytes, dict, tuple, or bytearray | SDK result | non-blocking | `robot.uart.send("hello")` | If a payload fails, simplify it to bytes or text first. |
-| `subscribe(callback)` / `unsubscribe()` | none | SDK result | non-blocking | `robot.uart.subscribe(print)` | `subscribe` raises `NotImplementedError`: the upstream SDK receive path is broken. |
+| `subscribe(callback)` | none | raises `NotImplementedError` | immediate | n/a | Unavailable until the upstream SDK receive path is fixed. |
+| `unsubscribe()` | none | SDK result | non-blocking | `robot.uart.unsubscribe()` | Available for cleanup. |
 
 ## `robot.ai_module`
 

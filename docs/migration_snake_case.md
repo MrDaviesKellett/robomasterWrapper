@@ -3,9 +3,9 @@
 ## Policy
 
 - `snake_case` is now the only supported primary public API style.
-- Legacy camelCase and mixed-case aliases have been removed in the pending release.
+- Legacy camelCase and mixed-case aliases (36 in total) were removed in 0.9.0.
 - Calls using removed names raise `AttributeError`.
-- Release version awaits Martin’s decision; 0.9.0 is recommended for this breaking change.
+- These breaking changes ship in 0.9.0 (2026-11-12), per the maintainer’s decision.
 
 ## Top-level `RoboMaster`
 

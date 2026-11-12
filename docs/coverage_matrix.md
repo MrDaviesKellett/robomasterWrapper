@@ -2,6 +2,8 @@
 
 Derived from the official DJI RoboMaster EP SDK source on `2026-04-13` and limited to the EP `Robot` surface, not the Tello `Drone` surface.
 
+Coverage reflects robowrap 0.9.0 (2026-11-12); the 36 expired legacy aliases are removed.
+
 Status values:
 
 - `wrapped`: exposed through the student wrapper
@@ -42,7 +44,7 @@ Status values:
 
 | Upstream EP API | Wrapper surface | Status | Notes |
 | --- | --- | --- | --- |
-| `drive_speed` | `robot.continuous_drive(...)` | wrapped | Continuous speed control. `set_speed(...)` is blocked because students can confuse it with move defaults. |
+| `drive_speed` | `robot.continuous_drive(...)` | wrapped | Returns `None` (fire and forget); axes x forward, y right, z clockwise-positive. `set_speed(...)` is blocked because students can confuse it with move defaults. |
 | `drive_wheels` | `robot.set_wheel_rpms(...)` | wrapped | Direct wheel control. |
 | `move` | `robot.move(...)`, `forward`, `back`, `left`, `right`, `turn` | wrapped | Position helpers on root object. |
 | `set_pwm_value` | `robot.chassis.set_pwm_value(...)` | wrapped | Advanced expansion control. |
@@ -68,8 +70,8 @@ Status values:
 | `gimbal.resume` / `suspend` | `robot.gun.resume()` / `suspend()` | wrapped | |
 | `gimbal.sub_angle` / `unsub_angle` | `robot.gun.subscribe_angle()` / `unsubscribe_angle()` | wrapped | |
 | `gimbal._set_work_mode` | none | intentionally_omitted | Internal work-mode detail. |
-| `blaster.fire` | `robot.gun.fire(...)` | wrapped | |
-| `blaster.set_led` | `robot.gun.set_led(...)` | wrapped | |
+| `blaster.fire` | `robot.gun.fire(...)` | wrapped | Fire count restricted to 1–5. |
+| `blaster.set_led` | `robot.gun.set_led(...)` | wrapped | Returns `None` (fire and forget). |
 
 ## Camera and vision
 
