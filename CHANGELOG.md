@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Print the connection route immediately and progress heartbeats every ten seconds; add an optional overall `connect_timeout` (seconds) while preserving the existing connection troubleshooting message. Late SDK connections are closed after timeout.
+- Reject `move()` when all movement coordinates are omitted, with accepted arguments and an explicit-zero example; keep `move(x=0, y=0)` supported.
+- Standardize validator type errors to name the parameter and accepted Python types.
+- Add actionable `send()` guidance to the UART receive error.
+- Lead the README with the Python 3.14+ installation requirement.
+
 ## 0.9.0 - 2026-11-12
 
 ### BREAKING CHANGES

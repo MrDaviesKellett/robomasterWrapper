@@ -1,3 +1,5 @@
+**Python 3.14+ required.** Earlier Python versions cannot install robowrap.
+
 # robowrap
 
 Student-first wrapper for the RoboMaster EP Python SDK.
